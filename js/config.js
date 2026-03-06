@@ -28,8 +28,7 @@ const CONFIG = {
   // Use Vercel injects, fallback to existing for local dev outside Vercel
   supabaseUrl: envConfig.SUPABASE_URL || 'https://fvogbzausgaktwmaurmw.supabase.co',
   supabaseKey: envConfig.SUPABASE_ANON_KEY || 'sb_publishable_14nVwF5ZaJk_gnHIN9Ls3g_ajFzWwy9',
-  adminEmail: 'satyamchoudharyfreefree@gmail.com',
-  adminPassword: 'S@tyam_0902',
+  adminEmail: envConfig.ADMIN_EMAIL || 'satyamchoudharyfreefree@gmail.com',
   appName: 'HappyFoodHappySilvassa',
   redirectAfterLogin: 'feed.html'
 };

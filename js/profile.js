@@ -41,6 +41,7 @@ const initProfile = async () => {
 const renderHeader = () => {
   const name = currentUser.user_metadata?.full_name || 'Foodie';
   const email = currentUser.email || 'No email';
+  const avatarUrl = currentUser.user_metadata?.avatar_url;
   const createdStr = new Date(currentUser.created_at).toLocaleDateString('en-US', { year:'numeric', month: 'long' });
 
   // Initials (e.g. "Satyam" -> "S", "Satyam Sharma" -> "SS")
@@ -49,7 +50,19 @@ const renderHeader = () => {
   document.getElementById('userNameLabel').innerText = name;
   document.getElementById('userEmailLabel').innerText = email;
   document.getElementById('userMemberSince').innerText = `Member since ${createdStr}`;
-  document.getElementById('userInitials').innerText = initials;
+  
+  const avatarImg = document.getElementById('avatarImg');
+  const userInitials = document.getElementById('userInitials');
+
+  if (avatarUrl) {
+    avatarImg.src = avatarUrl;
+    avatarImg.style.display = 'block';
+    userInitials.style.display = 'none';
+  } else {
+    avatarImg.style.display = 'none';
+    userInitials.style.display = 'block';
+    userInitials.innerText = initials;
+  }
 };
 
 

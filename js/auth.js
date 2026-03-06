@@ -80,11 +80,11 @@ const handleLogin = async () => {
 
     if (error) throw error;
 
-    // Block unverified users (Commented out during active development so you can log in easily)
-    // if (!data.user.email_confirmed_at) {
-    //   await sb.auth.signOut();
-    //   throw new Error('Please verify your email before logging in.');
-    // }
+    // Block unverified users
+    if (!data.user.email_confirmed_at) {
+      await sb.auth.signOut();
+      throw new Error('Please verify your email before logging in.');
+    }
 
     showToast('Login successful! Redirecting...', 'success');
     setTimeout(() => {
@@ -95,6 +95,21 @@ const handleLogin = async () => {
     showToast(err.message || 'Login failed.', 'error');
   } finally {
     setButtonLoading('loginBtn', false);
+  }
+};
+
+// === GOOGLE LOGIN HANDLER ===
+window.handleGoogleLogin = async () => {
+  try {
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/' + CONFIG.redirectAfterLogin
+      }
+    });
+    if (error) throw error;
+  } catch (err) {
+    showToast(err.message || 'Google login failed.', 'error');
   }
 };
 
