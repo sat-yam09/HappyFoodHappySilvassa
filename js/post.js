@@ -389,7 +389,7 @@ const initPostPage = async () => {
   } = await sb.auth.getUser();
   if (user) {
     currentUser = user;
-    if (user.email === CONFIG.adminEmail) isAdmin = true;
+    if (user.email?.toLowerCase() === CONFIG.adminEmail?.toLowerCase()) isAdmin = true;
   }
 
   // 2. Fetch Post UI Injection (with Retry)

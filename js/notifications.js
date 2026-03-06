@@ -6,7 +6,7 @@
 const initNotifs = async () => {
   // 1. Session Guard - Admins Only
   const { data: { user } } = await sb.auth.getUser();
-  if (!user || user.email !== CONFIG.adminEmail) {
+  if (!user || user.email?.toLowerCase() !== CONFIG.adminEmail?.toLowerCase()) {
     showToast("Access Denied: Admins only", 'error');
     window.location.href = 'feed.html';
     return;

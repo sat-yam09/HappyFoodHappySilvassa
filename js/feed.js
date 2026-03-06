@@ -282,7 +282,7 @@ const initFeed = async () => {
   const { data: { user } } = await sb.auth.getUser();
   if (user) {
     currentUser = user;
-    if (currentUser.email === CONFIG.adminEmail) {
+    if (currentUser.email?.toLowerCase() === CONFIG.adminEmail?.toLowerCase()) {
       isAdmin = true;
       // Expose admin buttons via CSS class toggling
       document.querySelectorAll('.is-admin').forEach(el => el.style.display = 'flex');

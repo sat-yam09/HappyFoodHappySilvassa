@@ -25,7 +25,7 @@ const initCreatePage = async () => {
   
   // 2. Admin Check
   const { data: { user } } = await sb.auth.getUser();
-  if (!user || user.email !== CONFIG.adminEmail) {
+  if (!user || user.email?.toLowerCase() !== CONFIG.adminEmail?.toLowerCase()) {
     showToast("Access Denied: Admins only", 'error');
     window.location.href = 'feed.html';
     return;

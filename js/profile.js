@@ -20,7 +20,7 @@ const initProfile = async () => {
   const { data: { user } } = await sb.auth.getUser();
   if (user) {
     currentUser = user;
-    if (user.email === CONFIG.adminEmail) isAdmin = true;
+    if (user.email?.toLowerCase() === CONFIG.adminEmail?.toLowerCase()) isAdmin = true;
   } else {
     window.location.href = 'index.html';
     return;
