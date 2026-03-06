@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - HappyFood</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/design-system.css">
+  <link rel="stylesheet" href="css/feed.css">
+  <link rel="stylesheet" href="css/profile.css">
+
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="profile-page">
+
+  <!-- ==========================================
+       DESKTOP LEFT SIDEBAR (min-width: 768px)
+       ========================================== -->
+  <aside class="desktop-sidebar">
+    <div class="sidebar-logo">HappyFood</div>
+
+    <nav style="display: flex; flex-direction: column; gap: 10px;">
+      <a href="feed.html" class="nav-item">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+        Feed
+      </a>
+
+      <a href="create-post.html" class="nav-item admin-create-btn is-admin">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        New Post
+      </a>
+
+      <a href="notifications.html" class="nav-item is-admin">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+        Activity
+      </a>
+
+      <a href="profile.html" class="nav-item active">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+        Profile
+      </a>
+    </nav>
+  </aside>
+
+  <main class="profile-container main-content" style="max-width: 720px; width:100%; margin: 0 auto; padding-top:40px;">
+    
+    <!-- Profile Header Info -->
+    <header class="profile-header">
+      <div class="avatar-container">
+        <span id="userInitials">??</span>
+        <img id="avatarImg" class="avatar-img" src="" alt="Avatar">
+      </div>
+      <h1 class="user-name" id="userNameLabel">Loading...</h1>
+      <p class="user-email" id="userEmailLabel">...</p>
+      <p class="member-since" id="userMemberSince">Member since ...</p>
+    </header>
+
+    <!-- Admin Specific Management Panel (Visible via JS) -->
+    <section id="adminSection" class="admin-section" style="display: none;">
+      <h2 class="admin-title">Admin Dashboard</h2>
+      
+      <div class="admin-stats">
+        <div class="stat-box">
+          <div class="stat-num" id="statGlobalPosts">0</div>
+          <div class="stat-label">Published</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="statGlobalComments">0</div>
+          <div class="stat-label">Comments</div>
+        </div>
+      </div>
+      
+      <a href="create-post.html" class="submit-btn" style="text-decoration: none; margin-bottom: 20px;">
+        <svg width="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:8px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Create New Recipe
+      </a>
+
+      <h3 style="font-family: var(--font-sans); font-size: 16px; margin-bottom: 15px;">Recent Posts (Fast Edit)</h3>
+      <div id="adminPostList">
+        <!-- Injected via JS -->
+      </div>
+    </section>
+
+    <!-- Liked Posts Horizontal Scroll -->
+    <section class="profile-section">
+      <h2 class="section-title">Posts You Loved ❤️</h2>
+      <div id="likedScrollArea" class="horizontal-scroll">
+        <div class="skeleton" style="min-width: 160px; height: 140px; border-radius: 16px;"></div>
+        <div class="skeleton" style="min-width: 160px; height: 140px; border-radius: 16px;"></div>
+      </div>
+    </section>
+
+    <!-- My Comments Vertical Scroll -->
+    <section class="profile-section">
+      <h2 class="section-title">Your Comments 💬</h2>
+      <div id="myCommentsList" class="comment-list">
+        <div class="skeleton" style="width: 100%; height: 80px; border-radius: 16px;"></div>
+      </div>
+    </section>
+
+    <!-- Logout Button -->
+    <button id="logoutBtn" class="logout-btn-large" onclick="handleLogout(event)">
+      Log Out
+    </button>
+
+  </main>
+
+  <!-- ==========================================
+       MOBILE BOTTOM NAVBAR (< 768px)
+       ========================================== -->
+  <nav class="mobile-nav">
+    <a href="feed.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+    </a>
+    <a href="feed.html" class="nav-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+    </a>
+    <a href="notifications.html" class="nav-item is-admin">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+    </a>
+    <a href="profile.html" class="nav-item active">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+    </a>
+  </nav>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/profile.js"></script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+/* ============================================================
+   LOGIN PAGE STYLES — HappyFoodHappySilvassa
+   Styles specific to index.html (login/signup page only).
+   ============================================================ */
+
+/* === PAGE LAYOUT === */
+body.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+/* === ANIMATED BLOB BACKGROUND === */
+.blob {
+  position: absolute;
+  filter: blur(80px);
+  opacity: 0.7;
+  z-index: 0;
+  animation: morph infinite linear alternate;
+}
+
+.blob-1 {
+  width: 600px;
+  height: 600px;
+  background: var(--color-pink);
+  top: -100px;
+  left: -100px;
+  animation-duration: 16s;
+}
+
+.blob-2 {
+  width: 700px;
+  height: 700px;
+  background: #ffb6c1;
+  bottom: -150px;
+  right: -100px;
+  animation-duration: 20s;
+  animation-direction: alternate-reverse;
+}
+
+.blob-3 {
+  width: 500px;
+  height: 500px;
+  background: var(--color-blue);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation-duration: 12s;
+}
+
+@keyframes morph {
+  0% {
+    border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+    transform: scale(1) translate(0px, 0px);
+  }
+  33% {
+    border-radius: 70% 30% 50% 50% / 30% 30% 70% 70%;
+    transform: scale(1.05) translate(30px, -50px);
+  }
+  66% {
+    border-radius: 100% 60% 60% 100% / 100% 100% 60% 60%;
+    transform: scale(0.95) translate(-20px, 30px);
+  }
+  100% {
+    border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+    transform: scale(1.1) translate(10px, -20px);
+  }
+}
+
+/* === FROSTED GLASS CARD === */
+.card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: var(--radius-card);
+  padding: 40px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow-pink);
+  position: relative;
+  z-index: 10;
+  margin: 20px;
+}
+
+.app-name {
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--color-pink);
+  font-size: 28px;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+/* === TAB SWITCHER === */
+.tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius-pill);
+  position: relative;
+  margin-bottom: 30px;
+  padding: 4px;
+}
+
+.tab-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 12px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--color-gray);
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+  transition: color 0.3s ease;
+}
+
+.tab-btn.active {
+  color: white;
+}
+
+.tab-indicator {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  height: calc(100% - 8px);
+  background: linear-gradient(135deg, var(--color-pink), #ff7eb3);
+  border-radius: var(--radius-pill);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+  box-shadow: 0 4px 15px rgba(237, 69, 147, 0.4);
+}
+
+/* === FORM SECTIONS === */
+.form-section {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.form-section.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

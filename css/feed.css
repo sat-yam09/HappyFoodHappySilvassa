@@ -1,0 +1,345 @@
+/* ============================================================
+   FEED PAGE STYLES — HappyFoodHappySilvassa
+   ============================================================ */
+
+/* === LAYOUT FOUNDATION === */
+body.feed-page {
+  background: linear-gradient(135deg, var(--color-blue) 0%, #fbe9f6 100%);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* === MOBILE NAVIGATION (Default) === */
+.mobile-nav {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: var(--radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 8px 16px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.nav-item {
+  color: var(--color-gray);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+
+.nav-item svg { width: 22px; height: 22px; }
+
+.nav-item.active {
+  background: linear-gradient(135deg, var(--color-pink), #ff7eb3);
+  color: white;
+  box-shadow: 0 4px 15px rgba(237, 69, 147, 0.3);
+}
+
+/* Floating Action Button for Admin */
+.fab-btn {
+  display: none; /* hidden by default, JS enables if admin */
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, var(--color-pink) 0%, #ff8a00 100%);
+  color: white;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(237, 69, 147, 0.4);
+  text-decoration: none;
+  z-index: 100;
+  transition: transform 0.2s ease;
+}
+.fab-btn:active { transform: translateX(-50%) scale(0.9); }
+.fab-btn.is-admin { display: flex; }
+
+/* Desktop Elements hidden on mobile */
+.desktop-sidebar, .desktop-right-panel { display: none; }
+
+/* Main Content Area */
+.main-content {
+  padding: 20px;
+  padding-bottom: 120px; /* space for mobile nav */
+  flex: 1;
+  width: 100%;
+}
+
+/* === SEARCH & FILTERS === */
+.search-bar {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto 20px auto;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 14px 20px 14px 45px;
+  border: var(--glass-border);
+  border-radius: var(--radius-pill);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  outline: none;
+  transition: all 0.3s ease;
+  color: var(--color-dark);
+}
+.search-bar input:focus { border-color: var(--color-pink); box-shadow: 0 0 0 3px rgba(237, 69, 147, 0.1); }
+.search-bar svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--color-gray); width: 20px; }
+
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+  scrollbar-width: none;
+}
+.filter-bar::-webkit-scrollbar { display: none; }
+
+.filter-pill {
+  border: var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  color: var(--color-dark);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+}
+.filter-pill.active {
+  background: linear-gradient(135deg, var(--color-pink), #ff7eb3);
+  color: white;
+  border-color: transparent;
+}
+
+/* === FEED GRID & CARDS === */
+.feed-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.post-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease, opacity 0.3s ease, height 0.3s ease;
+  position: relative;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: slideUp 0.4s ease forwards;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+}
+
+.post-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-pink);
+}
+
+.post-card.new-post {
+  animation: glowHigh 3s ease forwards;
+}
+
+@keyframes slideUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glowHigh {
+  0% { box-shadow: 0 0 20px var(--color-pink); border-color: var(--color-pink); }
+  100% { box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border-color: rgba(255,255,255,0.4); }
+}
+
+.post-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  background: #e2e8f0;
+}
+
+.post-content {
+  padding: 20px;
+  flex: 1;
+}
+
+.post-title {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 20px;
+  margin-bottom: 10px;
+  color: var(--color-dark);
+}
+
+.post-excerpt {
+  color: var(--color-gray);
+  font-size: 15px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.post-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(0,0,0,0.05);
+  padding-top: 15px;
+  color: var(--color-gray);
+  font-size: 14px;
+}
+
+.post-stats { display: flex; gap: 15px; }
+.stat-item { display: flex; align-items: center; gap: 5px; }
+
+.delete-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-error);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+.delete-btn:hover { background: white; transform: scale(1.1); }
+
+/* Skeleton Loaders */
+.skeleton {
+  background: linear-gradient(90deg, #e2e8f0 25%, #cbd5e1 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+.skel-card { padding: 0; min-height: 380px; }
+.skel-img { height: 200px; width: 100%; border-radius: 0; }
+.skel-title { height: 24px; width: 80%; margin: 20px; }
+.skel-text { height: 16px; width: 90%; margin: 0 20px 10px 20px; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--color-gray);
+}
+.empty-state svg { width: 64px; height: 64px; color: var(--color-pink); margin-bottom: 20px; opacity: 0.5; }
+
+/* === DESKTOP LAYOUT (min-width: 768px) === */
+@media (min-width: 768px) {
+  body.feed-page { flex-direction: row; }
+  
+  .mobile-nav { display: none; }
+  .fab-btn.is-admin { display: none; } /* Admins use sidebar button on desktop */
+  
+  .desktop-sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 240px;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border-right: var(--glass-border);
+    padding: 30px 20px;
+    z-index: 50;
+  }
+
+  .sidebar-logo {
+    font-family: var(--font-serif);
+    font-style: italic;
+    color: var(--color-pink);
+    font-size: 28px;
+    margin-bottom: 40px;
+    text-align: center;
+  }
+
+  .desktop-sidebar .nav-item { margin-bottom: 10px; }
+
+  .admin-create-btn {
+    display: none;
+    margin-top: 20px;
+    background: linear-gradient(45deg, var(--color-pink) 0%, #ff8a00 100%);
+    color: white;
+    justify-content: center;
+  }
+  .admin-create-btn.is-admin { display: flex; }
+
+  .logout-btn { margin-top: auto; color: var(--color-error); }
+  .logout-btn:hover { background: rgba(239, 68, 68, 0.1); }
+
+  .main-content {
+    margin-left: 240px;
+    margin-right: 280px; /* space for right panel */
+    padding: 40px 20px;
+  }
+
+  .desktop-right-panel {
+    display: block;
+    width: 280px;
+    height: 100vh;
+    position: fixed;
+    right: 0;
+    top: 0;
+    padding: 30px;
+  }
+  
+  .trending-box {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: var(--glass-border);
+    border-radius: var(--radius-card);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .trending-box h3 { font-family: var(--font-sans); margin-bottom: 15px; font-size: 16px; }
+}

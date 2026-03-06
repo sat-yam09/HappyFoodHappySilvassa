@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Post - HappyFoodHappySilvassa</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=DM+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Core App Styles -->
+  <link rel="stylesheet" href="css/design-system.css">
+  <link rel="stylesheet" href="css/post.css">
+
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body class="post-page">
+
+  <!-- Top Fixed Navigation -->
+  <nav class="post-nav">
+    <button class="back-btn" onclick="history.length > 1 ? history.back() : window.location.href='feed.html'">
+      <svg width="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+    </button>
+  </nav>
+
+  <!-- Hero Image -->
+  <header class="hero-section">
+    <img id="heroImage" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Post Hero"
+      class="hero-image">
+  </header>
+
+  <!-- Main Content Body -->
+  <main class="content-container">
+    <article class="post-card">
+
+      <!-- Post Header Text -->
+      <div class="post-header">
+        <h1 id="postTitle" class="post-title">Loading...</h1>
+        <div class="post-meta">
+          <span id="postDate">...</span>
+          <span><span id="displayCommentCount">0</span> Comments</span>
+        </div>
+      </div>
+
+      <!-- Raw Post Content -->
+      <div id="postContentBox" class="post-body">
+        <div class="skeleton" style="height: 20px; width: 100%; margin-bottom: 10px;"></div>
+        <div class="skeleton" style="height: 20px; width: 90%; margin-bottom: 10px;"></div>
+        <div class="skeleton" style="height: 20px; width: 80%;"></div>
+      </div>
+
+      <!-- Interaction Bar (Likes & Share) -->
+      <div class="interaction-bar">
+        <button id="likeBtn" class="action-btn like-btn" onclick="LikeService.toggle()">
+          🤍 <span id="likeCount">...</span>
+        </button>
+        <button class="action-btn share-whatsapp" onclick="handleShareWA()">
+          <svg width="18" fill="currentColor" viewBox="0 0 24 24">
+            <path
+              d="M12.031 0C5.385 0 0 5.385 0 12.031c0 2.124.553 4.148 1.604 5.945L.201 24l6.183-1.621c1.722.955 3.655 1.458 5.647 1.458 6.646 0 12.031-5.385 12.031-12.031S18.677 0 12.031 0zm3.844 17.307c-.161.453-.948.865-1.328.917-.38.052-1.026.166-3.328-.792-2.771-1.156-4.542-4.01-4.677-4.198-.135-.188-1.115-1.49-1.115-2.844 0-1.354.719-2.021.969-2.292.25-.271.552-.344.74-.344.188 0 .375.011.531.021.167.01.386-.063.604.469.23.553.74 1.813.803 1.948.063.135.104.302.01.49-.094.188-.146.302-.292.469-.146.167-.302.365-.438.5-.146.146-.302.313-.135.594.167.292.74 1.23 1.594 1.99.1095.698 1.885 1.094 2.229 1.156.344.063.542.063.75-.167.208-.23.833-1.011.969-1.354.135-.344.063-.583-.167-.677-.23-.094-1.354-.667-1.563-.74-.208-.073-.365-.104-.521.125-.156.23-.594.74-.729.896-.135.156-.271.177-.501.063-.23-.115-.969-.354-1.844-1.136-.688-.615-1.156-1.375-1.292-1.604-.135-.23-.01-.354.104-.469.104-.104.23-.271.344-.406.115-.135.156-.23.23-.386.073-.156.031-.302-.021-.417-.063-.125-.521-1.261-.719-1.73-.188-.458-.375-.386-.521-.386-.135 0-.302-.011-.469-.011z" />
+          </svg>
+          WhatsApp
+        </button>
+        <button id="shareCopyBtn" class="action-btn" onclick="handleShareCopy()">
+          🔗 Copy Link
+        </button>
+      </div>
+
+      <!-- Admin Actions Block -->
+      <div id="adminControls" class="admin-bar">
+        <p style="margin-bottom:10px; font-weight:600;">Admin Zone</p>
+        <button class="btn-danger" onclick="handleAdminDeletePost()">Delete Post</button>
+      </div>
+
+    </article>
+
+    <!-- Comments Section -->
+    <section class="comments-section">
+      <h2 class="comments-header">Comments</h2>
+
+      <!-- New Comment Form -->
+      <form class="comment-form"
+        onsubmit="event.preventDefault(); CommentService.post(document.getElementById('commentInput').value)">
+        <textarea id="commentInput" class="comment-input" placeholder="What are your thoughts on this post?" aria-label="Comment on this post"
+          required></textarea>
+        <button type="submit" id="commentSubmitBtn" class="comment-submit">Post Comment</button>
+      </form>
+
+      <!-- Rendered Comments List -->
+      <div id="commentList" class="comment-list">
+        <!-- Rendered via setupComments() in post.js -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Global Toast Component -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Javascript Logic -->
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/post.js"></script>
+</body>
+
+</html>

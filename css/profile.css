@@ -1,0 +1,267 @@
+/* ============================================================
+   PROFILE PAGE STYLES — HappyFoodHappySilvassa
+   ============================================================ */
+
+body.profile-page {
+  background: var(--color-blue);
+  min-height: 100vh;
+  padding-bottom: 100px;
+}
+
+/* === TOP NAV (Mobile) === */
+.profile-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border-bottom: var(--glass-border);
+  z-index: 100;
+}
+.nav-title {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  color: var(--color-dark);
+  font-weight: 600;
+  margin-left: 15px;
+}
+.back-btn {
+  background: none;
+  border: none;
+  color: var(--color-gray);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.back-btn:hover { color: var(--color-pink); }
+
+/* === MAIN CONTAINER === */
+.profile-container {
+  max-width: 720px;
+  margin: 100px auto 40px auto;
+  padding: 0 20px;
+}
+
+/* === HEADER: AVATAR & INFO === */
+.profile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.avatar-container {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-pink), #ff8a00);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-family: var(--font-sans);
+  font-size: 36px;
+  font-weight: 700;
+  box-shadow: 0 10px 30px rgba(237, 69, 147, 0.3);
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: none; /* JS toggles if image exists */
+}
+
+.user-name {
+  font-family: var(--font-sans);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-dark);
+  margin-bottom: 5px;
+}
+.user-email {
+  font-size: 16px;
+  color: var(--color-gray);
+  margin-bottom: 5px;
+}
+.member-since {
+  font-size: 14px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* === SECTION: GENERAL === */
+.profile-section {
+  margin-bottom: 40px;
+}
+.section-title {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  color: var(--color-dark);
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+/* === HORIZONTAL LIST (LIKED POSTS) === */
+.horizontal-scroll {
+  display: flex;
+  gap: 15px;
+  overflow-x: auto;
+  padding-bottom: 15px;
+  /* Hide scrollbar structurally */
+  scrollbar-width: none; 
+  -ms-overflow-style: none;
+}
+.horizontal-scroll::-webkit-scrollbar { display: none; }
+
+.compact-card {
+  min-width: 160px;
+  max-width: 160px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: 16px;
+  overflow: hidden;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+.compact-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+.compact-img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+}
+.compact-title {
+  padding: 10px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-dark);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* === VERTICAL LIST (COMMENTS) === */
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.comment-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: 16px;
+  padding: 15px;
+}
+.comment-card-content {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: #334155;
+  margin-bottom: 10px;
+}
+.comment-card-meta {
+  font-size: 13px;
+  color: var(--color-gray);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.comment-card-link {
+  color: var(--color-pink);
+  text-decoration: none;
+  font-weight: 600;
+}
+.comment-card-link:hover { text-decoration: underline; }
+
+/* === EMPTY STATE === */
+.empty-state {
+  background: rgba(255,255,255,0.4);
+  border: 1px dashed rgba(0,0,0,0.1);
+  border-radius: 16px;
+  padding: 30px;
+  text-align: center;
+  color: var(--color-gray);
+  font-size: 15px;
+}
+
+/* === ADMIN SECTION === */
+.admin-section {
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px dashed var(--color-error);
+  border-radius: var(--radius-card);
+  padding: 20px;
+  margin-bottom: 40px;
+}
+.admin-title {
+  color: var(--color-error);
+  margin-bottom: 15px;
+  font-family: var(--font-sans);
+  font-weight: 700;
+}
+.admin-stats {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+.stat-box {
+  flex: 1;
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+.stat-num { font-size: 24px; font-weight: 700; color: var(--color-dark); }
+.stat-label { font-size: 12px; color: var(--color-gray); text-transform: uppercase; letter-spacing: 1px; }
+
+/* Desktop Management List */
+.admin-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+.admin-list-title { font-size: 15px; font-weight: 500; color: var(--color-dark); flex: 1; }
+.admin-del-btn { color: var(--color-error); background: none; border: none; cursor: pointer; padding: 5px; }
+
+/* === LOGOUT BTN === */
+.logout-btn-large {
+  width: 100%;
+  padding: 15px;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--color-error);
+  background: transparent;
+  color: var(--color-error);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 20px;
+}
+.logout-btn-large:hover {
+  background: var(--color-error);
+  color: white;
+}
