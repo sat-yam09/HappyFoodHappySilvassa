@@ -358,3 +358,45 @@ body.post-page {
 .comment-delete-btn:hover {
   opacity: 1;
 }
+
+/* === NESTED COMMENTS === */
+.replies-container {
+  margin-top: 15px;
+  padding-left: 20px;
+  border-left: 2px solid rgba(237, 69, 147, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.comment-card.nested {
+  background: rgba(255, 255, 255, 0.3);
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.reply-btn {
+  background: none;
+  border: none;
+  color: var(--color-pink);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.reply-btn:hover {
+  text-decoration: underline;
+}
+
+.reply-form {
+  margin-top: 10px;
+  display: none;
+}
+.reply-form.active {
+  display: block;
+}

@@ -134,7 +134,7 @@ const CommentService = {
     return data;
   },
 
-  async post(content) {
+  async post(content, parentId = null) {
     if (!content.trim()) return;
 
     // Session Guard
@@ -146,11 +146,12 @@ const CommentService = {
       return;
     }
 
-    const input = document.getElementById("commentInput");
-    const submitBtn = document.getElementById("commentSubmitBtn");
+    const isReply = parentId !== null;
+    const input = isReply ? document.getElementById(`replyInput-${parentId}`) : document.getElementById("commentInput");
+    const submitBtn = isReply ? document.getElementById(`replySubmitBtn-${parentId}`) : document.getElementById("commentSubmitBtn");
 
-    input.disabled = true;
-    submitBtn.innerText = "Posting...";
+    if (input) input.disabled = true;
+    if (submitBtn) submitBtn.innerText = "Posting...";
 
     // Optimistic UI ID
     const optimisticId = "opt-" + Date.now();
@@ -160,17 +161,24 @@ const CommentService = {
       user_name: currentUser.user_metadata.full_name || "User",
       content: content,
       created_at: new Date().toISOString(),
-      parent_id: null, // foundation for threaded nested comments later
+      parent_id: parentId, // support for threaded nest
     };
 
     // Inject to DOM immediately
-    document
-      .getElementById("commentList")
-      .insertAdjacentHTML(
-        "beforeend",
-        renderCommentHTML(optimisticComment, true),
-      );
-    input.value = "";
+    if (isReply) {
+      const repliesContainer = document.getElementById(`replies-${parentId}`);
+      if (repliesContainer) {
+        repliesContainer.insertAdjacentHTML("beforeend", renderCommentHTML(optimisticComment, true, true));
+      }
+      // Hide reply form
+      window.toggleReplyForm(parentId);
+    } else {
+      document
+        .getElementById("commentList")
+        .insertAdjacentHTML("beforeend", renderCommentHTML(optimisticComment, true, false) + `<div class="replies-container" id="replies-${optimisticId}"></div>`);
+    }
+    
+    if (input) input.value = "";
 
     try {
       // Send to Supabase
@@ -180,6 +188,7 @@ const CommentService = {
           user_id: currentUser.id,
           user_name: optimisticComment.user_name,
           content: content,
+          parent_id: parentId
         },
       ]);
 
@@ -196,8 +205,8 @@ const CommentService = {
         `<p style="color:red;font-size:12px;">Failed to post.</p>`;
       console.error(err);
     } finally {
-      input.disabled = false;
-      submitBtn.innerText = "Post Comment";
+      if (input) input.disabled = false;
+      if (submitBtn) submitBtn.innerText = isReply ? "Reply" : "Post Comment";
     }
   },
 
@@ -262,7 +271,28 @@ const RealtimeService = {
           const optimistics = list.querySelectorAll(".optimistic");
           optimistics.forEach((el) => el.remove());
 
-          list.insertAdjacentHTML("beforeend", renderCommentHTML(payload.new));
+          const newComment = payload.new;
+          // In an advanced app, we'd replace the optimistic ID with real DB ID.
+          // For now, if someone else posted, drop it in. Avoid self-duplicates via a robust check,
+          // but optimistic simplicity is fine currently for HFHS.
+          if (newComment.user_id !== currentUser?.id) {
+            if (newComment.parent_id) {
+              const repliesContainer = document.getElementById(`replies-${newComment.parent_id}`);
+              if (repliesContainer) {
+                repliesContainer.insertAdjacentHTML(
+                  "beforeend",
+                  renderCommentHTML(newComment, false, true),
+                );
+              }
+            } else {
+              document
+                .getElementById("commentList")
+                .insertAdjacentHTML(
+                  "beforeend",
+                  renderCommentHTML(newComment, false, false) + `<div class="replies-container" id="replies-${newComment.id}"></div>`,
+                );
+            }
+          }
         },
       )
 
@@ -309,10 +339,42 @@ const RealtimeService = {
 
 
 
+/* === HELPER: BUILD NESTED TREE === */
+const buildCommentTree = (comments) => {
+  const commentMap = {};
+  const rootComments = [];
+  
+  comments.forEach(c => {
+    c.replies = [];
+    commentMap[c.id] = c;
+  });
+  
+  comments.forEach(c => {
+    if (c.parent_id && commentMap[c.parent_id]) {
+      commentMap[c.parent_id].replies.push(c);
+    } else {
+      rootComments.push(c);
+    }
+  });
+  
+  return rootComments;
+};
+
+const renderCommentTreeHTML = (comments) => {
+  return comments.map(c => `
+    ${renderCommentHTML(c, false, !!c.parent_id)}
+    <div class="replies-container" id="replies-${c.id}">
+      ${c.replies && c.replies.length > 0 ? renderCommentTreeHTML(c.replies) : ''}
+    </div>
+  `).join('');
+};
+
 /* === UI RENDER HELPERS === */
-const renderCommentHTML = (c, isOptimistic = false) => {
+const renderCommentHTML = (c, isOptimistic = false, isNested = false) => {
   const dateStr = new Date(c.created_at).toLocaleDateString();
-  const classes = isOptimistic ? "comment-card optimistic" : "comment-card";
+  let classes = isOptimistic ? "comment-card optimistic" : "comment-card";
+  if (isNested) classes += " nested";
+  
   const eleId = isOptimistic ? c.id : `comment-${c.id}`;
 
   // Can Delete? Only if we are Admin OR we own the comment
@@ -320,6 +382,22 @@ const renderCommentHTML = (c, isOptimistic = false) => {
   const delBtn = canDelete
     ? `<button class="comment-delete-btn" onclick="CommentService.delete('${c.id}')"><svg width="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>`
     : "";
+    
+  // Reply Button & Form (only allow 1 level deep nesting to keep UI clean, or allow infinite)
+  // We'll allow replying to both root and child, but all child replies attach to the parent for flat trees,
+  // or just nest deeply. Let's do simple infinite nesting.
+  const replyActionHTML = currentUser && !isOptimistic 
+    ? `
+      <button class="reply-btn" onclick="toggleReplyForm('${c.id}')">
+        <svg width="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg> Reply
+      </button>
+      <div class="reply-form" id="reply-form-${c.id}">
+        <textarea id="replyInput-${c.id}" class="comment-input" style="min-height: 60px; padding: 10px; font-size: 14px; margin-top: 10px;" placeholder="Write a reply..."></textarea>
+        <div style="text-align: right; margin-top: 8px;">
+          <button id="replySubmitBtn-${c.id}" class="comment-submit" style="position: static; padding: 6px 16px; font-size: 13px;" onclick="CommentService.post(document.getElementById('replyInput-${c.id}').value, '${c.id}')">Reply</button>
+        </div>
+      </div>
+    ` : '';
 
   return `
     <div class="${classes}" id="${eleId}">
@@ -329,8 +407,21 @@ const renderCommentHTML = (c, isOptimistic = false) => {
         ${delBtn}
       </div>
       <div class="comment-text">${c.content}</div>
+      ${replyActionHTML}
     </div>
   `;
+};
+
+window.toggleReplyForm = (commentId) => {
+  const form = document.getElementById(`reply-form-${commentId}`);
+  if (form) {
+    // Only toggle if they are logged in.
+    if (!currentUser) {
+      showToast('Please log in to reply.', 'error');
+      return;
+    }
+    form.classList.toggle('active');
+  }
 };
 
 const animateDeleteDOM = (elementId) => {
@@ -397,6 +488,13 @@ const initPostPage = async () => {
 
   // Inject visual data
   document.title = `${post.title} - HappyFood`;
+  
+  // Dynamic SEO Updates for rich previews (especially important for WhatsApp/Socials)
+  const metaTitle = document.getElementById('metaOgTitle');
+  if (metaTitle) metaTitle.content = post.title;
+  const metaImage = document.getElementById('metaOgImage');
+  if (metaImage && post.image_url) metaImage.content = post.image_url;
+
   document.getElementById("heroImage").src =
     post.image_url ||
     "https://images.unsplash.com/photo-1495195134817-a165bd39e4e3";
@@ -427,9 +525,8 @@ const initPostPage = async () => {
 
   // 4. Init Comments (with Retry)
   const comments = await withRetry(() => CommentService.fetchAll());
-  document.getElementById("commentList").innerHTML = comments
-    .map((c) => renderCommentHTML(c))
-    .join("");
+  const nestedComments = buildCommentTree(comments);
+  document.getElementById("commentList").innerHTML = renderCommentTreeHTML(nestedComments);
 
   // 5. Subscribe to Realtime Data
   RealtimeService.start();

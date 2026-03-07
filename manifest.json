@@ -1,0 +1,16 @@
+{
+  "name": "Happy Food Happy Silvassa",
+  "short_name": "HappyFood",
+  "start_url": "/feed.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ED4593",
+  "description": "Your local and global cuisines exclusively for food lovers.",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1046/1046874.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

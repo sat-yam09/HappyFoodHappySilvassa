@@ -164,3 +164,14 @@ window.showRealtimeDisconnectDot = () => {
   dot.style.cssText = 'position:fixed; top:20px; right:20px; font-size:12px; z-index:9999; filter:drop-shadow(0 0 5px orange);';
   document.body.appendChild(dot);
 };
+
+// 6. SERVICE WORKER REGISTRATION (PWA)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then(registration => {
+      console.log('SW registered: ', registration);
+    }).catch(registrationError => {
+      console.log('SW registration failed: ', registrationError);
+    });
+  });
+}
