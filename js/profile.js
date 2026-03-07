@@ -51,6 +51,15 @@ const renderHeader = () => {
   document.getElementById('userEmailLabel').innerText = email;
   document.getElementById('userMemberSince').innerText = `Member since ${createdStr}`;
   
+  const roleBadge = document.getElementById('userRoleBadge');
+  if (isAdmin) {
+    roleBadge.innerText = 'Admin';
+    roleBadge.className = 'role-badge role-admin';
+  } else {
+    roleBadge.innerText = 'Foodie Member';
+    roleBadge.className = 'role-badge role-member';
+  }
+  
   const avatarImg = document.getElementById('avatarImg');
   const userInitials = document.getElementById('userInitials');
 

@@ -99,6 +99,28 @@ body.profile-page {
   font-size: 14px;
   color: #94a3b8;
   font-style: italic;
+  margin-bottom: 20px;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 15px;
+}
+.role-admin {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-error);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.role-member {
+  background: rgba(237, 69, 147, 0.1);
+  color: var(--color-pink);
+  border: 1px solid rgba(237, 69, 147, 0.2);
 }
 
 /* === SECTION: GENERAL === */
@@ -155,6 +177,7 @@ body.profile-page {
   color: var(--color-dark);
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
