@@ -18,6 +18,8 @@ const PostDraft = {
   status: 'draft'  // 'draft' | 'publishing' | 'published'
 };
 
+let quill;
+
 /* === INITIALIZATION CORE (Admin Guard) === */
 const initCreatePage = async () => {
   // 1. Session Guard
@@ -32,10 +34,24 @@ const initCreatePage = async () => {
   }
   currentUser = user;
 
-  // 3. Restore Draft from Session Storage (Persistance)
+  // 3. Initialize Quill Editor
+  quill = new Quill('#quillEditor', {
+    theme: 'snow',
+    placeholder: 'Write the story behind the dish, ingredients, and steps here...',
+    modules: {
+      toolbar: [
+        [{ 'header': [2, 3, false] }],
+        ['bold', 'italic', 'underline'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        ['link', 'clean']
+      ]
+    }
+  });
+
+  // 4. Restore Draft from Session Storage (Persistance)
   restoreDraft();
 
-  // 4. Attach Listeners
+  // 5. Attach Listeners
   setupFormListeners();
   setupDragAndDrop();
   setupTagsInput();
@@ -58,15 +74,15 @@ const restoreDraft = () => {
   }
   if (savedContent) {
     PostDraft.content = savedContent;
-    document.getElementById('postContentInput').value = savedContent;
-    updateCounters(savedContent); // update live word count on load
+    // Load saved HTML into Quill
+    quill.root.innerHTML = savedContent;
+    updateCounters(quill.getText()); // Use plain text for counting
   }
 };
 
 /* === FORM LISTENERS === */
 const setupFormListeners = () => {
   const titleInput = document.getElementById('postTitleInput');
-  const contentInput = document.getElementById('postContentInput');
 
   titleInput.addEventListener('input', (e) => {
     PostDraft.title = e.target.value;
@@ -74,11 +90,23 @@ const setupFormListeners = () => {
     saveDraft();
   });
 
-  contentInput.addEventListener('input', (e) => {
-    PostDraft.content = e.target.value;
-    contentInput.classList.remove('shake');
-    updateCounters(PostDraft.content);
+  // Listen to Quill changes
+  quill.on('text-change', () => {
+    // Get HTML content for saving/publishing
+    const htmlContent = quill.root.innerHTML;
+    // If it's effectively empty (Quill default empty state), clear it
+    if (quill.getText().trim() === '') {
+      PostDraft.content = '';
+    } else {
+      PostDraft.content = htmlContent;
+    }
+    
+    // Update counters using plain text
+    updateCounters(quill.getText());
     saveDraft();
+    
+    // remove shake class from wrapper if it exists
+    document.getElementById('editorWrapper').classList.remove('shake');
   });
 };
 
@@ -233,7 +261,7 @@ window.toggleMode = (mode) => {
     document.getElementById('prevHeroImage').src = PostDraft.imagePreviewUrl || 'https://images.unsplash.com/photo-1495195134817-a165bd39e4e3?auto=format&fit=crop&w=800';
     document.getElementById('prevTitle').innerText = PostDraft.title || 'Untitled Recipe';
     document.getElementById('prevDate').innerText = new Date().toLocaleDateString('en-US', { year:'numeric', month: 'long', day: 'numeric' });
-    document.getElementById('prevBody').innerText = PostDraft.content || 'Start designing your amazing post to see it here.';
+    document.getElementById('prevBody').innerHTML = PostDraft.content || 'Start designing your amazing post to see it here.';
     
     // Quick Tag injection
     const tagHtml = PostDraft.tags.map(t => `<span class="tag-chip">${t}</span>`).join('');
@@ -259,8 +287,9 @@ const PublishService = {
       document.getElementById('postTitleInput').classList.add('shake');
       isValid = false;
     }
+    // Quill is never truly "empty" if someone types a space, but we cleared in the listener
     if (!PostDraft.content.trim()) {
-      document.getElementById('postContentInput').classList.add('shake');
+      document.getElementById('editorWrapper').classList.add('shake');
       isValid = false;
     }
     if (!PostDraft.imageFile) {

@@ -13,7 +13,9 @@
   <!-- Styles -->
   <link rel="stylesheet" href="css/design-system.css">
   <link rel="stylesheet" href="css/create-post.css">
-
+  <!-- Quill Rich Text Editor -->
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
@@ -65,13 +67,19 @@
       
       <!-- Tags / Categories Input -->
       <div class="tags-input-wrapper" id="tagsWrapper" style="margin-top: 15px;">
+      <div class="tags-input-wrapper" id="tagsWrapper" style="margin-top: 15px; margin-bottom: 20px;">
         <!-- Tag chips injected by JS -->
-        <input type="text" id="tagsInput" class="tag-input" placeholder="Add ingredients, tags, separated by comma..." aria-label="Recipe Tags">
+        <input type="text" id="tagsInput" class="tag-input" placeholder="Add tags separated by comma..." aria-label="Recipe Tags">
       </div>
 
-      <textarea id="postContentInput" class="content-input" placeholder="Write the story behind the dish, ingredients, and steps here..." aria-label="Recipe Content" required></textarea>
+      <!-- Quill Editor Container -->
+      <div id="editorWrapper" style="background: white; border-radius: 8px; overflow: hidden; border: var(--glass-border);">
+        <div id="quillEditor" style="height: 300px; font-family: var(--font-sans); font-size: 16px;"></div>
+      </div>
+      <!-- Hidden input to store raw content for validation if needed -->
+      <input type="hidden" id="postContentInput">
       
-      <div class="editor-meta">
+      <div class="editor-meta" style="margin-top: 15px;">
         <div class="meta-stats">
           <span class="meta-chip" id="charCountLabel">0 characters</span>
           <span class="meta-chip" id="wordCountLabel">0 words</span>
@@ -105,6 +113,9 @@
   </div>
 
   <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Quill JS Core -->
+  <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 
   <script src="js/config.js"></script>
   <script src="js/utils.js"></script>
