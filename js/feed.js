@@ -24,9 +24,17 @@ let isAdmin = false;
 window.FilterState = {
   activeFilter: 'latest', // latest | oldest | most_liked | most_commented
   searchTerm: '',
+  tag: '',
   page: 1,
   perPage: 12
 };
+
+let isFetching = false;
+let hasMore = true;
+const scrollSentinel = document.createElement('div');
+scrollSentinel.id = 'scrollSentinel';
+scrollSentinel.style.height = '10px';
+scrollSentinel.style.width = '100%';
 
 /* === DATA LAYER: PostService === */
 const PostService = {
@@ -38,6 +46,11 @@ const PostService = {
     // 1. Search Filter
     if (filterState.searchTerm) {
       query = query.ilike('title', `%${filterState.searchTerm}%`);
+    }
+
+    // 1.1 Tag Filter
+    if (filterState.tag) {
+      query = query.contains('tags', [filterState.tag]);
     }
 
     // 2. Ordering Filter
@@ -124,6 +137,11 @@ const renderCard = (post, isNew = false) => {
        </button>` 
     : '';
 
+  // Render Tags
+  const tagsHTML = (post.tags || []).map(t => `
+    <span class="card-tag" onclick="event.preventDefault(); handleTagFilter('${t}')">#${t}</span>
+  `).join('');
+
   // The Card (a clickable link block)
   return `
     <a href="post.html?id=${post.id}" class="post-card ${isNew ? 'new-post' : ''}" id="post-${post.id}">
@@ -131,6 +149,7 @@ const renderCard = (post, isNew = false) => {
       <img src="${post.image_url || 'https://images.unsplash.com/photo-1495195134817-a165bd39e4e3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'}" alt="Food" class="post-image" loading="lazy">
       
       <div class="post-content">
+        <div class="card-tags-row">${tagsHTML}</div>
         <h3 class="post-title">${post.title || 'Untitled Recipe'}</h3>
         <p class="post-excerpt">${excerpt}</p>
         
@@ -173,14 +192,25 @@ const renderEmptyState = () => {
 
 // Main render pipeline based on FilterState
 const renderFeed = async () => {
-  if (FilterState.page === 1) renderSkeletons();
+  if (isFetching) return;
+  isFetching = true;
+
+  if (FilterState.page === 1) {
+    renderSkeletons();
+    hasMore = true;
+  }
 
   try {
     const posts = await withRetry(() => PostService.fetchAll(FilterState));
     
     if (posts.length === 0) {
-      renderEmptyState();
+      if (FilterState.page === 1) renderEmptyState();
+      hasMore = false;
       return;
+    }
+
+    if (posts.length < FilterState.perPage) {
+      hasMore = false;
     }
 
     const html = posts.map(p => renderCard(p)).join('');
@@ -191,10 +221,26 @@ const renderFeed = async () => {
       feedGrid.insertAdjacentHTML('beforeend', html);
     }
     
+    // Append sentinel
+    feedGrid.appendChild(scrollSentinel);
+
   } catch (err) {
     showToast(STRINGS.errorLoad, 'error');
     console.error(err);
+  } finally {
+    isFetching = false;
   }
+};
+
+const setupInfiniteScroll = () => {
+  const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && hasMore && !isFetching) {
+      FilterState.page++;
+      renderFeed();
+    }
+  }, { threshold: 0.1 });
+
+  observer.observe(scrollSentinel);
 };
 
 /* === EVENT HANDLERS === */
@@ -251,6 +297,20 @@ const handleFilterChange = (el, type) => {
   // Update State & Re-render
   FilterState.activeFilter = type;
   FilterState.page = 1; // reset pagination
+  FilterState.tag = ''; // reset tag filter
+  renderFeed();
+};
+
+window.handleTagFilter = (tag) => {
+  // Update State & Re-render
+  FilterState.tag = tag;
+  FilterState.page = 1;
+  FilterState.activeFilter = 'latest'; // Default to latest when filtering by tag
+  
+  // UI update for pills
+  document.querySelectorAll('.filter-pill').forEach(btn => btn.classList.remove('active'));
+  document.querySelector('.filter-pill[onclick*="latest"]').classList.add('active');
+  
   renderFeed();
 };
 
@@ -295,7 +355,10 @@ const initFeed = async () => {
   // 4. Initial Fetch
   await renderFeed();
 
-  // 5. Setup Live Subscription
+  // 5. Setup Infinite Scroll
+  setupInfiniteScroll();
+
+  // 6. Setup Live Subscription
   PostService.subscribeToUpdates(handleNewPostArrival, handleUpdatePostArrival);
 };
 

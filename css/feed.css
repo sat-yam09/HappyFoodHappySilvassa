@@ -204,6 +204,32 @@ body.feed-page {
   flex: 1;
 }
 
+.card-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.card-tag {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  color: var(--color-pink);
+  background: rgba(237, 69, 147, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.card-tag:hover {
+  background: var(--color-pink);
+  color: white;
+  transform: translateY(-1px);
+}
+
 .post-title {
   font-family: var(--font-sans);
   font-weight: 700;
