@@ -123,8 +123,8 @@ const PostService = {
 const feedGrid = document.getElementById('feedGrid');
 
 const renderCard = (post, isNew = false) => {
-  // Truncate excerpt
-  let excerpt = post.content || '';
+  // Truncate excerpt (strip any HTML tags from older posts)
+  let excerpt = (post.content || '').replace(/<[^>]*>/g, '');
   if (excerpt.length > 120) excerpt = excerpt.substring(0, 120) + '...';
 
   // Format Date gracefully
@@ -329,6 +329,8 @@ const handleSearch = (e) => {
 window.handleLogout = async (e) => {
   if(e) e.preventDefault();
   await sb.auth.signOut();
+  sessionStorage.removeItem('__HFHS_ENV');
+  sessionStorage.removeItem('__HFHS_ENV_V');
   window.location.href = 'index.html';
 };
 

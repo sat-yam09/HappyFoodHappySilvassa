@@ -511,9 +511,9 @@ const initPostPage = async () => {
   document.getElementById("displayCommentCount").innerText =
     post.comments_count || 0;
 
-  // Clean injected content (raw HTML output placeholder for Rich Text Day 4)
-  document.getElementById("postContentBox").innerHTML =
-    post.content || "<p>No content provided.</p>";
+  // Display plain text content
+  document.getElementById("postContentBox").innerText =
+    post.content || "No content provided.";
 
   // Show Admin Actions
   if (isAdmin) {

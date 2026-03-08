@@ -104,7 +104,7 @@ window.handleGoogleLogin = async () => {
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin + '/' + CONFIG.redirectAfterLogin
+        redirectTo: window.location.origin + '/'
       }
     });
     if (error) throw error;

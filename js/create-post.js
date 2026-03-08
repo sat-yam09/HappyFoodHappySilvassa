@@ -1,6 +1,7 @@
 /* ============================================================
    CREATE LOGIC — HappyFoodHappySilvassa
    Handles image preview, form validation, and Supabase publishing.
+   Simple flow: Image + Title + Tags + Caption (plain text).
    Requires: config.js + utils.js loaded first.
    ============================================================ */
 
@@ -18,8 +19,6 @@ const PostDraft = {
   status: 'draft'  // 'draft' | 'publishing' | 'published'
 };
 
-let quill;
-
 /* === INITIALIZATION CORE (Admin Guard) === */
 const initCreatePage = async () => {
   // 1. Session Guard
@@ -34,24 +33,10 @@ const initCreatePage = async () => {
   }
   currentUser = user;
 
-  // 3. Initialize Quill Editor
-  quill = new Quill('#quillEditor', {
-    theme: 'snow',
-    placeholder: 'Write the story behind the dish, ingredients, and steps here...',
-    modules: {
-      toolbar: [
-        [{ 'header': [2, 3, false] }],
-        ['bold', 'italic', 'underline'],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-        ['link', 'clean']
-      ]
-    }
-  });
-
-  // 4. Restore Draft from Session Storage (Persistance)
+  // 3. Restore Draft from Session Storage (Persistence)
   restoreDraft();
 
-  // 5. Attach Listeners
+  // 4. Attach Listeners
   setupFormListeners();
   setupDragAndDrop();
   setupTagsInput();
@@ -74,15 +59,15 @@ const restoreDraft = () => {
   }
   if (savedContent) {
     PostDraft.content = savedContent;
-    // Load saved HTML into Quill
-    quill.root.innerHTML = savedContent;
-    updateCounters(quill.getText()); // Use plain text for counting
+    document.getElementById('postContentInput').value = savedContent;
+    updateCounters(savedContent);
   }
 };
 
 /* === FORM LISTENERS === */
 const setupFormListeners = () => {
   const titleInput = document.getElementById('postTitleInput');
+  const contentInput = document.getElementById('postContentInput');
 
   titleInput.addEventListener('input', (e) => {
     PostDraft.title = e.target.value;
@@ -90,23 +75,11 @@ const setupFormListeners = () => {
     saveDraft();
   });
 
-  // Listen to Quill changes
-  quill.on('text-change', () => {
-    // Get HTML content for saving/publishing
-    const htmlContent = quill.root.innerHTML;
-    // If it's effectively empty (Quill default empty state), clear it
-    if (quill.getText().trim() === '') {
-      PostDraft.content = '';
-    } else {
-      PostDraft.content = htmlContent;
-    }
-    
-    // Update counters using plain text
-    updateCounters(quill.getText());
+  contentInput.addEventListener('input', (e) => {
+    PostDraft.content = e.target.value;
+    contentInput.classList.remove('shake');
+    updateCounters(e.target.value);
     saveDraft();
-    
-    // remove shake class from wrapper if it exists
-    document.getElementById('editorWrapper').classList.remove('shake');
   });
 };
 
@@ -261,7 +234,7 @@ window.toggleMode = (mode) => {
     document.getElementById('prevHeroImage').src = PostDraft.imagePreviewUrl || 'https://images.unsplash.com/photo-1495195134817-a165bd39e4e3?auto=format&fit=crop&w=800';
     document.getElementById('prevTitle').innerText = PostDraft.title || 'Untitled Recipe';
     document.getElementById('prevDate').innerText = new Date().toLocaleDateString('en-US', { year:'numeric', month: 'long', day: 'numeric' });
-    document.getElementById('prevBody').innerHTML = PostDraft.content || 'Start designing your amazing post to see it here.';
+    document.getElementById('prevBody').innerText = PostDraft.content || 'Start designing your amazing post to see it here.';
     
     // Quick Tag injection
     const tagHtml = PostDraft.tags.map(t => `<span class="tag-chip">${t}</span>`).join('');
@@ -287,9 +260,8 @@ const PublishService = {
       document.getElementById('postTitleInput').classList.add('shake');
       isValid = false;
     }
-    // Quill is never truly "empty" if someone types a space, but we cleared in the listener
     if (!PostDraft.content.trim()) {
-      document.getElementById('editorWrapper').classList.add('shake');
+      document.getElementById('postContentInput').classList.add('shake');
       isValid = false;
     }
     if (!PostDraft.imageFile) {

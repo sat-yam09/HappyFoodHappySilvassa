@@ -17,6 +17,14 @@ let isAdmin = false;
 const initProfile = async () => {
   // 1. Session check
   await checkSession(null, 'index.html');
+  
+  // 2. Force refresh from server to get fresh user data (not stale cache)
+  try {
+    await sb.auth.refreshSession();
+  } catch (e) {
+    console.warn('Session refresh failed, using existing:', e);
+  }
+  
   const { data: { user } } = await sb.auth.getUser();
   if (user) {
     currentUser = user;
@@ -210,6 +218,9 @@ window.handleLogout = async (e) => {
   btn.innerText = 'Logging out...';
   
   await sb.auth.signOut();
+  // Clear cached env/session data to prevent stale profile on next login
+  sessionStorage.removeItem('__HFHS_ENV');
+  sessionStorage.removeItem('__HFHS_ENV_V');
   window.location.href = 'index.html';
 };
 
