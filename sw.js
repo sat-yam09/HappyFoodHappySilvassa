@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hfhs-cache-v3';
+const CACHE_NAME = 'hfhs-cache-v4';
 const urlsToCache = [
   '/',
   '/css/design-system.css',

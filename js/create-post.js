@@ -1,7 +1,7 @@
 /* ============================================================
    CREATE LOGIC — HappyFoodHappySilvassa
-   Handles image preview, form validation, and Supabase publishing.
-   Simple flow: Image + Title + Tags + Caption (plain text).
+   Handles multi-image upload, form validation, and publishing.
+   Simple flow: Multiple Images + Title + Tags + Caption.
    Requires: config.js + utils.js loaded first.
    ============================================================ */
 
@@ -12,19 +12,17 @@ let currentUser = null;
 const PostDraft = {
   title: '',
   content: '',
-  imageFile: null,
-  imagePreviewUrl: '',
+  imageFiles: [],       // Array of File objects
+  imagePreviewUrls: [], // Array of blob URLs for preview
   tags: [],
-  publishAt: null, // For future scheduling
-  status: 'draft'  // 'draft' | 'publishing' | 'published'
+  publishAt: null,
+  status: 'draft'
 };
 
 /* === INITIALIZATION CORE (Admin Guard) === */
 const initCreatePage = async () => {
-  // 1. Session Guard
   await checkSession(null, 'index.html');
   
-  // 2. Admin Check
   const { data: { user } } = await sb.auth.getUser();
   if (!user || user.email?.toLowerCase() !== CONFIG.adminEmail?.toLowerCase()) {
     showToast("Access Denied: Admins only", 'error');
@@ -33,10 +31,7 @@ const initCreatePage = async () => {
   }
   currentUser = user;
 
-  // 3. Restore Draft from Session Storage (Persistence)
   restoreDraft();
-
-  // 4. Attach Listeners
   setupFormListeners();
   setupDragAndDrop();
   setupTagsInput();
@@ -85,10 +80,9 @@ const setupFormListeners = () => {
 
 const updateCounters = (text) => {
   const charCount = text.length;
-  // Regex to split by whitespace robustly
   const words = text.trim() ? text.trim().split(/\s+/) : [];
   const wordCount = words.length;
-  const readTime = Math.max(1, Math.ceil(wordCount / 200)); // standard 200wpm
+  const readTime = Math.max(1, Math.ceil(wordCount / 200));
 
   document.getElementById('charCountLabel').innerText = `${charCount} characters`;
   document.getElementById('wordCountLabel').innerText = `${wordCount} words`;
@@ -102,17 +96,11 @@ const setupTagsInput = () => {
   const wrapper = document.getElementById('tagsWrapper');
 
   const renderTags = () => {
-    // Keep input field but clear existing chips
     Array.from(wrapper.querySelectorAll('.tag-chip')).forEach(c => c.remove());
-    
-    // Read tags array and output HTML
     PostDraft.tags.forEach((tag, index) => {
       const chip = document.createElement('div');
       chip.className = 'tag-chip';
-      chip.innerHTML = `
-        ${tag}
-        <button type="button" class="tag-remove" onclick="removeTag(${index})" title="Remove">✕</button>
-      `;
+      chip.innerHTML = `${tag} <button type="button" class="tag-remove" onclick="removeTag(${index})" title="Remove">✕</button>`;
       wrapper.insertBefore(chip, input);
     });
   };
@@ -132,26 +120,22 @@ const setupTagsInput = () => {
         renderTags();
       }
     } else if (e.key === 'Backspace' && input.value === '' && PostDraft.tags.length > 0) {
-      // pop last tag if backspacing on empty input
       PostDraft.tags.pop();
       renderTags();
     }
   });
 
-  // Export so clicking wrapper focuses input
   wrapper.addEventListener('click', () => input.focus());
 };
 
 
-/* === DRAG & DROP IMAGE LOGIC === */
+/* === MULTI-IMAGE DRAG & DROP === */
 const setupDragAndDrop = () => {
   const dropZone = document.getElementById('uploadZone');
   const fileInput = document.getElementById('fileInput');
 
-  // Clicks
   dropZone.addEventListener('click', () => fileInput.click());
   
-  // Drag states
   ['dragenter', 'dragover'].forEach(evt => {
     dropZone.addEventListener(evt, (e) => {
       e.preventDefault(); e.stopPropagation();
@@ -166,58 +150,79 @@ const setupDragAndDrop = () => {
     });
   });
 
-  // Drop capture
   dropZone.addEventListener('drop', (e) => {
-    const file = e.dataTransfer.files[0];
-    handleFile(file);
+    const files = Array.from(e.dataTransfer.files);
+    files.forEach(f => handleFile(f));
   });
 
-  // Manual Select
   fileInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    handleFile(file);
+    const files = Array.from(e.target.files);
+    files.forEach(f => handleFile(f));
+    fileInput.value = ''; // Reset so same file can be re-selected
   });
 };
 
 const handleFile = (file) => {
   if (!file) return;
 
-  // Validation
   const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
   if (!validTypes.includes(file.type)) {
     showToast("Must be JPEG, PNG, or WEBP", 'error');
     return;
   }
   
-  if (file.size > 5 * 1024 * 1024) { // 5MB limit
+  if (file.size > 5 * 1024 * 1024) {
     showToast("Image must be smaller than 5MB", 'error');
     return;
   }
-  
-  if (file.size > 1 * 1024 * 1024) { // 1MB warning (Scalability Note)
-    showToast("Large image — consider compressing for faster feed loads.", 'info');
+
+  if (PostDraft.imageFiles.length >= 10) {
+    showToast("Maximum 10 images per post", 'error');
+    return;
   }
 
-  // Set Draft State
-  PostDraft.imageFile = file;
-  
-  // Create object URL for local preview (avoids unnecessary remote upload during draft)
-  if (PostDraft.imagePreviewUrl) URL.revokeObjectURL(PostDraft.imagePreviewUrl);
-  PostDraft.imagePreviewUrl = URL.createObjectURL(file);
+  PostDraft.imageFiles.push(file);
+  const previewUrl = URL.createObjectURL(file);
+  PostDraft.imagePreviewUrls.push(previewUrl);
 
-  // Update UI
-  document.getElementById('uploadZone').classList.remove('shake');
-  document.getElementById('uploadTextContainer').style.display = 'none';
-  
-  const previewContainer = document.getElementById('imagePreviewContainer');
-  previewContainer.classList.add('active');
-  document.getElementById('previewImg').src = PostDraft.imagePreviewUrl;
+  renderImageThumbnails();
 };
 
-// Also exported so "Change Photo" button can override click propagation
-window.triggerFileSelect = (e) => {
-  e.stopPropagation();
-  document.getElementById('fileInput').click();
+const renderImageThumbnails = () => {
+  const strip = document.getElementById('imageThumbsStrip');
+  const addBtn = document.getElementById('addMoreBtn');
+  
+  // Clear existing thumbnails (keep addBtn)
+  Array.from(strip.querySelectorAll('.thumb-item')).forEach(el => el.remove());
+
+  PostDraft.imagePreviewUrls.forEach((url, index) => {
+    const thumb = document.createElement('div');
+    thumb.className = 'thumb-item';
+    thumb.innerHTML = `
+      <img src="${url}" alt="Photo ${index + 1}">
+      <button type="button" class="thumb-remove" onclick="removeImage(${index})" title="Remove">✕</button>
+      <span class="thumb-badge">${index + 1}</span>
+    `;
+    strip.insertBefore(thumb, addBtn);
+  });
+
+  // Show/hide elements based on state
+  if (PostDraft.imageFiles.length > 0) {
+    document.getElementById('uploadZone').classList.add('has-images');
+    addBtn.style.display = 'flex';
+  } else {
+    document.getElementById('uploadZone').classList.remove('has-images');
+    addBtn.style.display = 'none';
+  }
+
+  document.getElementById('uploadZone').classList.remove('shake');
+};
+
+window.removeImage = (index) => {
+  URL.revokeObjectURL(PostDraft.imagePreviewUrls[index]);
+  PostDraft.imageFiles.splice(index, 1);
+  PostDraft.imagePreviewUrls.splice(index, 1);
+  renderImageThumbnails();
 };
 
 
@@ -230,20 +235,17 @@ window.toggleMode = (mode) => {
   const preview = document.getElementById('previewContainer');
 
   if (mode === 'preview') {
-    // Inject Editor Data into Preview Scaffold
-    document.getElementById('prevHeroImage').src = PostDraft.imagePreviewUrl || 'https://images.unsplash.com/photo-1495195134817-a165bd39e4e3?auto=format&fit=crop&w=800';
+    document.getElementById('prevHeroImage').src = PostDraft.imagePreviewUrls[0] || 'https://images.unsplash.com/photo-1495195134817-a165bd39e4e3?auto=format&fit=crop&w=800';
     document.getElementById('prevTitle').innerText = PostDraft.title || 'Untitled Recipe';
     document.getElementById('prevDate').innerText = new Date().toLocaleDateString('en-US', { year:'numeric', month: 'long', day: 'numeric' });
     document.getElementById('prevBody').innerText = PostDraft.content || 'Start designing your amazing post to see it here.';
     
-    // Quick Tag injection
     const tagHtml = PostDraft.tags.map(t => `<span class="tag-chip">${t}</span>`).join('');
     document.getElementById('prevTags').innerHTML = tagHtml;
 
     editor.classList.add('hidden');
     preview.classList.add('active');
   } else {
-    // Mode Editing
     editor.classList.remove('hidden');
     preview.classList.remove('active');
   }
@@ -264,7 +266,7 @@ const PublishService = {
       document.getElementById('postContentInput').classList.add('shake');
       isValid = false;
     }
-    if (!PostDraft.imageFile) {
+    if (PostDraft.imageFiles.length === 0) {
       document.getElementById('uploadZone').classList.add('shake');
       isValid = false;
     }
@@ -274,33 +276,40 @@ const PublishService = {
   },
 
   async uploadImage(file) {
-    // Build unique clean filename
     const cleanName = file.name.replace(/[^a-zA-Z0-9.\-]/g, '');
-    const uniquePath = `${Date.now()}-${cleanName}`;
+    const uniquePath = `${Date.now()}-${Math.random().toString(36).substring(2, 6)}-${cleanName}`;
 
-    // Upload to 'images' bucket (Created in Day 1 SQL)
     const { data, error } = await sb.storage
       .from('images')
       .upload(uniquePath, file, { cacheControl: '3600', upsert: false });
 
     if (error) throw error;
 
-    // Retrieve public URL synchronously
     const { data: urlData } = sb.storage.from('images').getPublicUrl(uniquePath);
     return urlData.publicUrl;
   },
 
-  async createPost(imageUrl) {
+  async uploadAllImages() {
+    const urls = [];
+    for (const file of PostDraft.imageFiles) {
+      const url = await this.uploadImage(file);
+      urls.push(url);
+    }
+    return urls;
+  },
+
+  async createPost(imageUrls) {
+    // Store as JSON array string for multiple images, backward compatible
+    const imageUrlValue = imageUrls.length === 1 ? imageUrls[0] : JSON.stringify(imageUrls);
+    
     const payload = {
       title: PostDraft.title.trim(),
       content: PostDraft.content.trim(),
-      image_url: imageUrl,
+      image_url: imageUrlValue,
       user_id: currentUser.id,
-      // Pass the tags array directly (Supabase JS auto-maps to TEXT[])
       tags: PostDraft.tags || []
     };
 
-    // Scalability Handle: Inject future publish date if utilized
     if (PostDraft.publishAt) {
       payload.publish_at = new Date(PostDraft.publishAt).toISOString();
     }
@@ -312,33 +321,30 @@ const PublishService = {
   async execute() {
     if (!this.validate()) return;
     
-    // Safety Catch: Cannot double publish.
     if (PostDraft.status === 'publishing') return;
     PostDraft.status = 'publishing';
 
-    // Show Overlay Wall (Disables interaction)
     document.getElementById('publishOverlay').classList.add('active');
 
     try {
-      // Step 1: Push binary to storage (Slowest)
-      const finalUrl = await this.uploadImage(PostDraft.imageFile);
+      // Step 1: Upload all images
+      const finalUrls = await this.uploadAllImages();
       
-      // Step 2: Push row to database (Fast)
-      await this.createPost(finalUrl);
+      // Step 2: Create post row
+      await this.createPost(finalUrls);
 
-      // Step 3: Success Flush
+      // Step 3: Success
       showToast("Post published to all feeds successfully!", "success");
       sessionStorage.removeItem('hfhs_draft_title');
       sessionStorage.removeItem('hfhs_draft_content');
       
-      // Redirect
       setTimeout(() => window.location.href = 'feed.html', 1500);
 
     } catch (err) {
       console.error(err);
       showToast(err.message || "Failed to publish. Try again.", "error");
       document.getElementById('publishOverlay').classList.remove('active');
-      PostDraft.status = 'draft'; // Revert state so user can retry without losing text
+      PostDraft.status = 'draft';
     }
   }
 };

@@ -7,7 +7,6 @@ body.post-page {
   background: var(--color-blue);
   min-height: 100vh;
   padding-bottom: 100px;
-  /* Space for mobile nav if needed */
 }
 
 /* === TOP NAVIGATION BAR === */
@@ -23,7 +22,6 @@ body.post-page {
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
   z-index: 100;
   pointer-events: none;
-  /* Let clicks pass through except on buttons */
 }
 
 .post-nav button {
@@ -50,7 +48,7 @@ body.post-page {
   transform: scale(1.05);
 }
 
-/* === HERO SECTION === */
+/* === HERO SECTION / CAROUSEL === */
 .hero-section {
   position: relative;
   width: 100%;
@@ -64,10 +62,192 @@ body.post-page {
   }
 }
 
-.hero-image {
+.carousel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.carousel-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+}
+
+.carousel-slide {
+  min-width: 100%;
+  width: 100%;
+  height: 100%;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.carousel-slide img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Carousel Arrows (Desktop) */
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--color-dark);
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.carousel-arrow:hover {
+  background: white;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.carousel-prev { left: 15px; }
+.carousel-next { right: 15px; }
+
+/* Show arrows only on desktop when there are multiple images */
+@media (min-width: 768px) {
+  .carousel.multi .carousel-arrow { display: flex; }
+}
+
+/* Dot Indicators */
+.carousel-dots {
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  gap: 8px;
+  z-index: 20;
+}
+
+.carousel.multi .carousel-dots { display: flex; }
+
+.carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s ease;
+}
+
+.carousel-dot.active {
+  background: white;
+  width: 24px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* === LIGHTBOX (Full Screen Image Viewer) === */
+.lightbox-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.lightbox-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.lightbox-img {
+  max-width: 92vw;
+  max-height: 88vh;
+  object-fit: contain;
+  border-radius: 8px;
+  transition: transform 0.3s ease;
+  user-select: none;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 10001;
+}
+
+.lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.lightbox-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 10001;
+}
+
+.lightbox-overlay.multi .lightbox-arrow { display: flex; }
+.lightbox-arrow:hover { background: rgba(255, 255, 255, 0.3); transform: translateY(-50%) scale(1.1); }
+.lightbox-prev { left: 20px; }
+.lightbox-next { right: 20px; }
+
+.lightbox-counter {
+  position: absolute;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.7);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
 }
 
 /* === CONTENT CONTAINER === */
@@ -117,6 +297,19 @@ body.post-page {
   font-size: 18px;
   line-height: 1.8;
   color: #334155;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.post-body a {
+  color: var(--color-pink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s;
+  word-break: break-all;
+}
+.post-body a:hover {
+  color: #d93d82;
 }
 
 .post-body p {
@@ -144,6 +337,7 @@ body.post-page {
   margin-top: 40px;
   padding-top: 20px;
   border-top: 1px solid rgba(0, 0, 0, 0.05);
+  flex-wrap: wrap;
 }
 
 .action-btn {
@@ -180,17 +374,9 @@ body.post-page {
 }
 
 @keyframes heartPop {
-  0% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.4);
-  }
-
-  100% {
-    transform: scale(1);
-  }
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1); }
 }
 
 .like-btn.animating svg {
@@ -198,14 +384,8 @@ body.post-page {
 }
 
 /* Share Buttons */
-.share-whatsapp {
-  color: #25D366;
-}
-
-.share-whatsapp:hover {
-  background: #25D366;
-  color: white;
-}
+.share-whatsapp { color: #25D366; }
+.share-whatsapp:hover { background: #25D366; color: white; }
 
 /* === ADMIN CONTROLS === */
 .admin-bar {
@@ -215,13 +395,10 @@ body.post-page {
   border: 1px dashed var(--color-error);
   border-radius: 12px;
   display: none;
-  /* JS toggles this */
   text-align: center;
 }
 
-.admin-bar.is-admin {
-  display: block;
-}
+.admin-bar.is-admin { display: block; }
 
 .btn-danger {
   background: var(--color-error);
@@ -233,14 +410,10 @@ body.post-page {
   font-weight: 600;
 }
 
-.btn-danger:hover {
-  background: #dc2626;
-}
+.btn-danger:hover { background: #dc2626; }
 
 /* === COMMENTS SECTION === */
-.comments-section {
-  margin-top: 40px;
-}
+.comments-section { margin-top: 40px; }
 
 .comments-header {
   font-family: var(--font-serif);
@@ -249,7 +422,6 @@ body.post-page {
   color: var(--color-dark);
 }
 
-/* Comment Input */
 .comment-form {
   margin-bottom: 30px;
   position: relative;
@@ -289,7 +461,6 @@ body.post-page {
   box-shadow: 0 4px 15px rgba(237, 69, 147, 0.3);
 }
 
-/* Comment Thread */
 .comment-list {
   display: flex;
   flex-direction: column;
@@ -305,10 +476,7 @@ body.post-page {
   overflow: hidden;
 }
 
-.comment-card.optimistic {
-  opacity: 0.6;
-  pointer-events: none;
-}
+.comment-card.optimistic { opacity: 0.6; pointer-events: none; }
 
 .comment-card.optimistic::after {
   content: 'Sending...';
@@ -326,22 +494,10 @@ body.post-page {
   font-size: 13px;
 }
 
-.comment-author {
-  font-weight: 700;
-  color: var(--color-dark);
-}
+.comment-author { font-weight: 700; color: var(--color-dark); }
+.comment-date { color: var(--color-gray); }
+.comment-text { font-size: 15px; color: #475569; line-height: 1.5; }
 
-.comment-date {
-  color: var(--color-gray);
-}
-
-.comment-text {
-  font-size: 15px;
-  color: #475569;
-  line-height: 1.5;
-}
-
-/* Comment Delete Button */
 .comment-delete-btn {
   background: none;
   border: none;
@@ -355,9 +511,7 @@ body.post-page {
   right: 10px;
 }
 
-.comment-delete-btn:hover {
-  opacity: 1;
-}
+.comment-delete-btn:hover { opacity: 1; }
 
 /* === NESTED COMMENTS === */
 .replies-container {
@@ -389,14 +543,7 @@ body.post-page {
   gap: 5px;
 }
 
-.reply-btn:hover {
-  text-decoration: underline;
-}
+.reply-btn:hover { text-decoration: underline; }
 
-.reply-form {
-  margin-top: 10px;
-  display: none;
-}
-.reply-form.active {
-  display: block;
-}
+.reply-form { margin-top: 10px; display: none; }
+.reply-form.active { display: block; }

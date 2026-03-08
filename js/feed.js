@@ -122,6 +122,29 @@ const PostService = {
 /* === UI RENDER LOGIC === */
 const feedGrid = document.getElementById('feedGrid');
 
+// Helper: extract first image URL from single URL or JSON array
+const getFirstImageUrl = (imageUrlField) => {
+  if (!imageUrlField) return 'https://images.unsplash.com/photo-1495195134817-a165bd39e4e3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+  try {
+    if (imageUrlField.startsWith('[')) {
+      const parsed = JSON.parse(imageUrlField);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+    }
+  } catch (e) { /* not JSON */ }
+  return imageUrlField;
+};
+
+const getImageCount = (imageUrlField) => {
+  if (!imageUrlField) return 1;
+  try {
+    if (imageUrlField.startsWith('[')) {
+      const parsed = JSON.parse(imageUrlField);
+      if (Array.isArray(parsed)) return parsed.length;
+    }
+  } catch (e) { /* not JSON */ }
+  return 1;
+};
+
 const renderCard = (post, isNew = false) => {
   // Truncate excerpt (strip any HTML tags from older posts)
   let excerpt = (post.content || '').replace(/<[^>]*>/g, '');
@@ -142,11 +165,19 @@ const renderCard = (post, isNew = false) => {
     <span class="card-tag" onclick="event.preventDefault(); handleTagFilter('${t}')">#${t}</span>
   `).join('');
 
+  // Get first image and count
+  const firstImg = getFirstImageUrl(post.image_url);
+  const imgCount = getImageCount(post.image_url);
+  const photoBadge = imgCount > 1 ? `<span class="photo-count-badge">📷 ${imgCount}</span>` : '';
+
   // The Card (a clickable link block)
   return `
     <a href="post.html?id=${post.id}" class="post-card ${isNew ? 'new-post' : ''}" id="post-${post.id}">
       ${deleteBtnHTML}
-      <img src="${post.image_url || 'https://images.unsplash.com/photo-1495195134817-a165bd39e4e3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'}" alt="Food" class="post-image" loading="lazy">
+      <div class="post-image-wrapper">
+        <img src="${firstImg}" alt="Food" class="post-image" loading="lazy">
+        ${photoBadge}
+      </div>
       
       <div class="post-content">
         <div class="card-tags-row">${tagsHTML}</div>

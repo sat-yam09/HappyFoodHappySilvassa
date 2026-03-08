@@ -471,6 +471,189 @@ window.handleAdminDeletePost = async () => {
   });
 };
 
+/* === IMAGE URL PARSER (backward compatible) === */
+const parseImageUrls = (imageUrlField) => {
+  if (!imageUrlField) return ['https://images.unsplash.com/photo-1495195134817-a165bd39e4e3'];
+  // Try JSON array parse
+  try {
+    if (imageUrlField.startsWith('[')) {
+      const parsed = JSON.parse(imageUrlField);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) { /* not JSON, treat as single URL */ }
+  return [imageUrlField];
+};
+
+/* === LINKIFY: Convert URLs in text to clickable links === */
+const linkifyText = (text) => {
+  if (!text) return '';
+  // Regex to match URLs (http, https, and www)
+  const urlRegex = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi;
+  // Escape HTML first to prevent XSS
+  const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return escaped.replace(urlRegex, (url) => {
+    const href = url.startsWith('www.') ? 'https://' + url : url;
+    // Truncate display if super long
+    const display = url.length > 60 ? url.substring(0, 57) + '...' : url;
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer">${display}</a>`;
+  });
+};
+
+/* === CAROUSEL STATE === */
+let carouselImages = [];
+let carouselIndex = 0;
+
+/* === CAROUSEL SETUP === */
+const setupCarousel = (urls) => {
+  carouselImages = urls;
+  const track = document.getElementById('carouselTrack');
+  const dots = document.getElementById('carouselDots');
+  const carousel = document.getElementById('heroCarousel');
+
+  // Build slides
+  track.innerHTML = urls.map((url, i) => `
+    <div class="carousel-slide" onclick="openLightbox(${i})">
+      <img src="${url}" alt="Post photo ${i + 1}" loading="${i === 0 ? 'eager' : 'lazy'}">
+    </div>
+  `).join('');
+
+  // Build dots
+  dots.innerHTML = urls.map((_, i) => `
+    <button class="carousel-dot ${i === 0 ? 'active' : ''}" onclick="goToSlide(${i})"></button>
+  `).join('');
+
+  // Multi-image mode
+  if (urls.length > 1) {
+    carousel.classList.add('multi');
+  }
+
+  // Setup touch swipe for mobile
+  setupCarouselSwipe(track);
+};
+
+const goToSlide = (index) => {
+  const total = carouselImages.length;
+  carouselIndex = Math.max(0, Math.min(index, total - 1));
+  
+  const track = document.getElementById('carouselTrack');
+  track.style.transform = `translateX(-${carouselIndex * 100}%)`;
+
+  // Update dots
+  document.querySelectorAll('.carousel-dot').forEach((dot, i) => {
+    dot.classList.toggle('active', i === carouselIndex);
+  });
+};
+
+window.carouselNav = (direction) => {
+  goToSlide(carouselIndex + direction);
+};
+
+window.goToSlide = goToSlide;
+
+/* === TOUCH/SWIPE for carousel === */
+const setupCarouselSwipe = (trackEl) => {
+  let startX = 0, startY = 0, isDragging = false, diffX = 0;
+
+  trackEl.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    isDragging = true;
+    trackEl.style.transition = 'none';
+  }, { passive: true });
+
+  trackEl.addEventListener('touchmove', (e) => {
+    if (!isDragging) return;
+    diffX = e.touches[0].clientX - startX;
+    const diffY = e.touches[0].clientY - startY;
+    
+    // If scrolling more vertically, don't hijack
+    if (Math.abs(diffY) > Math.abs(diffX)) { isDragging = false; return; }
+    
+    const offset = -(carouselIndex * trackEl.parentElement.offsetWidth) + diffX;
+    trackEl.style.transform = `translateX(${offset}px)`;
+  }, { passive: true });
+
+  trackEl.addEventListener('touchend', () => {
+    if (!isDragging) { trackEl.style.transition = ''; goToSlide(carouselIndex); return; }
+    isDragging = false;
+    trackEl.style.transition = '';
+    
+    const threshold = 50;
+    if (diffX < -threshold) { goToSlide(carouselIndex + 1); }
+    else if (diffX > threshold) { goToSlide(carouselIndex - 1); }
+    else { goToSlide(carouselIndex); }
+    diffX = 0;
+  }, { passive: true });
+};
+
+
+/* === LIGHTBOX STATE & LOGIC === */
+let lightboxIndex = 0;
+
+window.openLightbox = (index) => {
+  lightboxIndex = index;
+  const overlay = document.getElementById('lightboxOverlay');
+  document.getElementById('lightboxImg').src = carouselImages[index];
+  
+  if (carouselImages.length > 1) {
+    overlay.classList.add('multi');
+    document.getElementById('lightboxCounter').innerText = `${index + 1} / ${carouselImages.length}`;
+  }
+  
+  overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  
+  // Setup lightbox swipe
+  setupLightboxSwipe();
+};
+
+window.closeLightbox = (e) => {
+  if (e && e.target !== e.currentTarget && !e.target.closest('.lightbox-close')) return;
+  const overlay = document.getElementById('lightboxOverlay');
+  overlay.classList.remove('active', 'multi');
+  document.body.style.overflow = '';
+};
+
+window.lightboxNav = (e, direction) => {
+  e.stopPropagation();
+  lightboxIndex = Math.max(0, Math.min(lightboxIndex + direction, carouselImages.length - 1));
+  document.getElementById('lightboxImg').src = carouselImages[lightboxIndex];
+  document.getElementById('lightboxCounter').innerText = `${lightboxIndex + 1} / ${carouselImages.length}`;
+};
+
+const setupLightboxSwipe = () => {
+  const overlay = document.getElementById('lightboxOverlay');
+  let startX = 0, diffX = 0;
+
+  const onTouchStart = (e) => { startX = e.touches[0].clientX; };
+  const onTouchMove = (e) => { diffX = e.touches[0].clientX - startX; };
+  const onTouchEnd = () => {
+    if (diffX < -50) { lightboxNav({ stopPropagation: () => {} }, 1); }
+    else if (diffX > 50) { lightboxNav({ stopPropagation: () => {} }, -1); }
+    diffX = 0;
+  };
+
+  // Remove old listeners by replacing element (simple approach)
+  overlay.removeEventListener('touchstart', overlay._lbts);
+  overlay.removeEventListener('touchmove', overlay._lbtm);
+  overlay.removeEventListener('touchend', overlay._lbte);
+  overlay._lbts = onTouchStart; overlay._lbtm = onTouchMove; overlay._lbte = onTouchEnd;
+  overlay.addEventListener('touchstart', onTouchStart, { passive: true });
+  overlay.addEventListener('touchmove', onTouchMove, { passive: true });
+  overlay.addEventListener('touchend', onTouchEnd, { passive: true });
+};
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  const lightbox = document.getElementById('lightboxOverlay');
+  if (!lightbox.classList.contains('active')) return;
+  
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') lightboxNav({ stopPropagation: () => {} }, -1);
+  if (e.key === 'ArrowRight') lightboxNav({ stopPropagation: () => {} }, 1);
+});
+
+
 /* === INITIALIZATION CORE === */
 const initPostPage = async () => {
   // 1. Session check
@@ -489,15 +672,19 @@ const initPostPage = async () => {
   // Inject visual data
   document.title = `${post.title} - HappyFood`;
   
-  // Dynamic SEO Updates for rich previews (especially important for WhatsApp/Socials)
+  // Dynamic SEO Updates
   const metaTitle = document.getElementById('metaOgTitle');
   if (metaTitle) metaTitle.content = post.title;
+  
+  // Parse images (backward compatible with single URL or JSON array)
+  const imageUrls = parseImageUrls(post.image_url);
+  
   const metaImage = document.getElementById('metaOgImage');
-  if (metaImage && post.image_url) metaImage.content = post.image_url;
+  if (metaImage && imageUrls[0]) metaImage.content = imageUrls[0];
 
-  document.getElementById("heroImage").src =
-    post.image_url ||
-    "https://images.unsplash.com/photo-1495195134817-a165bd39e4e3";
+  // Setup image carousel
+  setupCarousel(imageUrls);
+
   document.getElementById("postTitle").innerText =
     post.title || "Untitled Post";
   document.getElementById("postDate").innerText = new Date(
@@ -511,9 +698,10 @@ const initPostPage = async () => {
   document.getElementById("displayCommentCount").innerText =
     post.comments_count || 0;
 
-  // Display plain text content
-  document.getElementById("postContentBox").innerText =
-    post.content || "No content provided.";
+  // Display content with clickable links
+  const contentBox = document.getElementById("postContentBox");
+  const rawContent = post.content || "No content provided.";
+  contentBox.innerHTML = linkifyText(rawContent);
 
   // Show Admin Actions
   if (isAdmin) {
@@ -533,3 +721,4 @@ const initPostPage = async () => {
 };
 
 document.addEventListener("DOMContentLoaded", initPostPage);
+

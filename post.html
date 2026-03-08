@@ -40,10 +40,22 @@
     </button>
   </nav>
 
-  <!-- Hero Image -->
+  <!-- Hero Image Carousel -->
   <header class="hero-section">
-    <img id="heroImage" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Post Hero"
-      class="hero-image">
+    <div class="carousel" id="heroCarousel">
+      <div class="carousel-track" id="carouselTrack">
+        <!-- Images injected by JS -->
+      </div>
+      <!-- Desktop Arrow Buttons -->
+      <button class="carousel-arrow carousel-prev" id="carouselPrev" onclick="carouselNav(-1)">
+        <svg width="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+      </button>
+      <button class="carousel-arrow carousel-next" id="carouselNext" onclick="carouselNav(1)">
+        <svg width="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+      </button>
+      <!-- Dot Indicators -->
+      <div class="carousel-dots" id="carouselDots"></div>
+    </div>
   </header>
 
   <!-- Main Content Body -->
@@ -110,6 +122,19 @@
     </section>
 
   </main>
+
+  <!-- Lightbox Overlay (Full Screen Image Viewer) -->
+  <div class="lightbox-overlay" id="lightboxOverlay" onclick="closeLightbox(event)">
+    <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+    <img class="lightbox-img" id="lightboxImg" src="" alt="Full size image">
+    <button class="lightbox-arrow lightbox-prev" id="lightboxPrev" onclick="lightboxNav(event, -1)">
+      <svg width="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+    </button>
+    <button class="lightbox-arrow lightbox-next" id="lightboxNext" onclick="lightboxNav(event, 1)">
+      <svg width="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+    </button>
+    <div class="lightbox-counter" id="lightboxCounter"></div>
+  </div>
 
   <!-- Global Toast Component -->
   <div id="toastContainer" class="toast-container"></div>
