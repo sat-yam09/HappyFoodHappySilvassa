@@ -81,6 +81,16 @@
         Activity
       </a>
 
+      <a href="manage-ads.html" class="nav-item is-admin">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+        </svg>
+        Manage Ads
+      </a>
+
       <a href="profile.html" class="nav-item active">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -108,6 +118,24 @@
       <p class="member-since" id="userMemberSince">Member since ...</p>
     </header>
 
+    <section class="profile-mobile-actions">
+      <button type="button" class="profile-quick-btn profile-theme-btn" onclick="toggleTheme()"
+        aria-label="Toggle dark mode">
+        <span>Dark Mode</span>
+        <span class="profile-theme-icon theme-toggle">&#127769;</span>
+      </button>
+
+      <a href="manage-ads.html" class="profile-quick-btn profile-quick-link is-admin">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+        </svg>
+        <span>Manage Ads</span>
+      </a>
+    </section>
+
     <!-- Admin Specific Management Panel (Visible via JS) -->
     <section id="adminSection" class="admin-section" style="display: none;">
       <h2 class="admin-title">Admin Dashboard</h2>
@@ -128,6 +156,16 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
         </svg>
         Create New Recipe
+      </a>
+
+      <a href="manage-ads.html" class="submit-btn" style="text-decoration: none; margin-bottom: 20px;">
+        <svg width="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right:8px;">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+        </svg>
+        Manage Ads
       </a>
 
       <h3 style="font-family: var(--font-sans); font-size: 16px; margin-bottom: 15px;">Recent Posts (Fast Edit)</h3>
