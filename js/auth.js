@@ -19,6 +19,7 @@ const switchTab = (tab) => {
   document.getElementById('loginForm').classList.toggle('active', isLogin);
   document.getElementById('signupForm').classList.toggle('active', !isLogin);
 };
+window.switchTab = switchTab;
 
 // === SIGNUP HANDLER ===
 const handleSignup = async () => {
@@ -42,20 +43,6 @@ const handleSignup = async () => {
     showToast('Successfully registered! Please check your inbox to verify.', 'success');
     document.getElementById('signupForm').reset();
 
-    // Profile insertion wrapper (silent fail if table is missing)
-    if (data.user) {
-      try {
-        const { error: profileError } = await sb.from('profiles').insert([
-          { id: data.user.id, name: name, email: email }
-        ]);
-        if (profileError) {
-          console.warn('Could not insert profile (table might not exist yet).', profileError);
-        }
-      } catch (profileErr) {
-        console.warn('Profile insertion threw an error.', profileErr);
-      }
-    }
-
     // Switch to login tab after success
     setTimeout(() => switchTab('login'), 2000);
   } catch (err) {
@@ -64,6 +51,7 @@ const handleSignup = async () => {
     setButtonLoading('signupBtn', false);
   }
 };
+window.handleSignup = handleSignup;
 
 // === LOGIN HANDLER ===
 const handleLogin = async () => {
@@ -97,6 +85,7 @@ const handleLogin = async () => {
     setButtonLoading('loginBtn', false);
   }
 };
+window.handleLogin = handleLogin;
 
 // === GOOGLE LOGIN HANDLER ===
 window.handleGoogleLogin = async () => {

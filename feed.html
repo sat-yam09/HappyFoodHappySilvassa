@@ -5,23 +5,44 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Feed - HappyFood</title>
-  
+
   <!-- SEO & PWA Meta Tags -->
   <meta name="description" content="Discover and share the best local and global recipes.">
   <meta property="og:title" content="Feed - HappyFood">
   <meta property="og:description" content="Discover and share the best local and global recipes in Silvassa.">
-  <meta property="og:image" content="https://images.unsplash.com/photo-1495195134817-a165bd39e4e3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80">
-  <meta name="theme-color" content="#ED4593">
-  <link rel="manifest" href="/manifest.json">
+  <meta property="og:image"
+    content="https://images.unsplash.com/photo-1495195134817-a165bd39e4e3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80">
+  <meta name="theme-color" content="#F2A541">
+  <script>
+    if (location.hostname === '127.0.0.1' || location.hostname === 'localhost') {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          registrations.forEach((registration) => registration.unregister());
+        }).catch(() => {});
+      }
 
-  <!-- Google Fonts -->
+      if ('caches' in window) {
+        caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key)))).catch(() => {});
+      }
+    }
+  </script>
+  <link rel="manifest" href="/manifest.json?v=20260313c">
+  <link rel="icon" type="image/png" href="/icons/icon-192.png?v=20260313c">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png?v=20260313c">
+
+  <!-- Theme Script (Must load first) -->
+  <script src="js/theme.js?v=20260313c"></script>
+
+  <!-- Google Fonts: Inter & Playfair Display -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&display=swap"
+    rel="stylesheet">
 
   <!-- Core App Styles -->
-  <link rel="stylesheet" href="css/design-system.css">
-  <link rel="stylesheet" href="css/feed.css">
+  <link rel="stylesheet" href="css/design-system.css?v=20260313c">
+  <link rel="stylesheet" href="css/feed.css?v=20260313c">
 
   <!-- Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -37,44 +58,75 @@
 
     <nav style="display: flex; flex-direction: column; gap: 10px;">
       <a href="feed.html" class="nav-item active">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+          </path>
+        </svg>
         Feed
       </a>
 
       <!-- Visible only if isAdmin == true -->
       <a href="create-post.html" class="nav-item admin-create-btn is-admin">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
         New Post
       </a>
 
       <a href="notifications.html" class="nav-item is-admin">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+          </path>
+        </svg>
         Activity
       </a>
 
+      <a href="manage-ads.html" class="nav-item is-admin">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+        </svg>
+        Manage Ads
+      </a>
+
       <a href="profile.html" class="nav-item">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+        </svg>
         Profile
       </a>
     </nav>
 
     <a href="#" onclick="handleLogout(event)" class="nav-item logout-btn">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+      </svg>
       Logout
     </a>
+
+    <button class="sidebar-theme-toggle theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">🌙</button>
   </aside>
 
   <!-- ==========================================
        MAIN FEED CONTENT (Centered Layout)
        ========================================== -->
   <main class="main-content">
-    
+
     <!-- SEARCH BAR -->
-    <div class="search-bar">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-      </svg>
-      <input type="text" id="searchInput" aria-label="Search recipes" placeholder="Search delicious recipes...">
+    <div class="header-row">
+      <div class="search-bar">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+        <input type="text" id="searchInput" aria-label="Search recipes" placeholder="Search delicious recipes...">
+      </div>
     </div>
 
     <!-- FILTER BUTTONS -->
@@ -98,12 +150,33 @@
   <aside class="desktop-right-panel">
     <div class="trending-box">
       <h3>Trending Flavors</h3>
-      <p style="color:var(--color-gray); font-size:14px; line-height:1.5;">Check back soon for the most popular recipes in Silvassa!</p>
+      <p style="color:var(--color-gray); font-size:14px; line-height:1.5;">Check back soon for the most popular recipes
+        in Silvassa!</p>
     </div>
-    
-    <div class="trending-box">
+
+    <!-- SPONSORED AD BANNER (Placeholder for Businesses) -->
+    <div class="ad-banner"
+      style="margin-top: 24px; padding: 16px; border-radius: 16px; background: var(--glass-bg-strong); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: 1px solid var(--color-accent); cursor: pointer; transition: transform 0.2s;"
+      onclick="window.open('#', '_blank')">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+        <div
+          style="width: 40px; height: 40px; border-radius: 8px; background: var(--color-accent); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-family: var(--font-display); font-size: 14px;">
+          AD</div>
+        <h4 style="margin: 0; font-family: var(--font-display); font-size: 16px; color: var(--color-text);">Promote Your
+          Business</h4>
+      </div>
+      <p style="margin: 0 0 16px 0; font-size: 14px; color: var(--color-text-secondary); line-height: 1.4;">Reach
+        thousands of foodies in Silvassa. Feature your shop or restaurant today!</p>
+      <div
+        style="color: var(--color-accent); font-weight: 600; font-size: 14px; background: var(--color-accent-light); padding: 8px 16px; border-radius: 20px; text-align: center;">
+        Contact Us</div>
+    </div>
+    <!-- END SPONSORED AD BANNER -->
+
+    <div class="trending-box" style="margin-top: 24px;">
       <h3>About the Chef</h3>
-      <p style="color:var(--color-gray); font-size:14px; line-height:1.5;">Curating the best local and global cuisines exclusively for food lovers.</p>
+      <p style="color:var(--color-gray); font-size:14px; line-height:1.5;">Curating the best local and global cuisines
+        exclusively for food lovers.</p>
     </div>
   </aside>
 
@@ -113,31 +186,48 @@
        ========================================== -->
   <nav class="mobile-nav">
     <a href="feed.html" class="nav-item active">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+        </path>
+      </svg>
     </a>
     <a href="#" class="nav-item" onclick="document.getElementById('searchInput').focus(); return false;">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+      </svg>
     </a>
+    <!-- Mobile Floating Action Button (Only visible if isAdmin) -->
+    <a href="create-post.html" class="fab-btn is-admin">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+      </svg>
+    </a>
+
     <a href="notifications.html" class="nav-item is-admin">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+        </path>
+      </svg>
     </a>
     <a href="profile.html" class="nav-item">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+      </svg>
     </a>
   </nav>
-
-  <!-- Mobile Floating Action Button (Only visible if isAdmin) -->
-  <a href="create-post.html" class="fab-btn is-admin">
-    +
-  </a>
 
   <!-- Global Toast Component -->
   <div id="toastContainer" class="toast-container"></div>
 
   <!-- Javascript Logic -->
-  <script src="js/config.js"></script>
-  <script src="js/utils.js"></script>
-  <script src="js/feed.js"></script>
+  <script src="js/config.js?v=20260313c"></script>
+  <script src="js/utils.js?v=20260313c"></script>
+  <script src="js/feed.js?v=20260313c"></script>
 
 </body>
+
 </html>

@@ -20,6 +20,14 @@ let isAdmin = false;
 let currentPostId = new URLSearchParams(window.location.search).get("id");
 let hasLiked = false;
 
+const escapeHtml = (value = "") =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 /* === REDIRECT IF NO ID === */
 if (!currentPostId) window.location.href = "feed.html";
 
@@ -38,17 +46,81 @@ const fetchPost = async () => {
   return data;
 };
 
+const getCountValue = (elementId) => {
+  const raw = parseInt(document.getElementById(elementId)?.innerText || "0", 10);
+  return Number.isFinite(raw) ? raw : 0;
+};
+
+const setCountValue = (elementId, nextValue) => {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  el.innerText = Math.max(0, nextValue);
+};
+
+const PostMutationService = {
+  async addLike() {
+    const { data, error } = await sb
+      .from("likes")
+      .insert([{ post_id: currentPostId, user_id: currentUser.id }])
+      .select("id");
+    if (error) throw error;
+    if (!data?.length) throw new Error("Like could not be saved.");
+  },
+
+  async removeLike() {
+    const { data, error } = await sb
+      .from("likes")
+      .delete()
+      .eq("post_id", currentPostId)
+      .eq("user_id", currentUser.id)
+      .select("id");
+    if (error) throw error;
+    if (!data?.length) throw new Error("Like could not be removed.");
+  },
+
+  async addComment(payload) {
+    const { data, error } = await sb
+      .from("comments")
+      .insert([payload])
+      .select("*")
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async removeComment(commentId) {
+    const { data, error } = await sb
+      .from("comments")
+      .delete()
+      .eq("id", commentId)
+      .select("id");
+    if (error) throw error;
+    if (!data?.length) throw new Error("Comment could not be deleted.");
+  },
+
+  async deleteCurrentPost() {
+    const { data, error } = await sb
+      .from("posts")
+      .delete()
+      .eq("id", currentPostId)
+      .select("id");
+    if (error) throw error;
+    if (!data?.length) throw new Error("Post could not be deleted.");
+  }
+};
+
 /* === INTERACTION: LIKES === */
 const LikeService = {
   isToggling: false,
 
   async fetchInitialState(userId) {
-    const { data } = await sb
+    const { data, error } = await sb
       .from("likes")
       .select("id")
       .eq("post_id", currentPostId)
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
+    if (error) throw error;
     hasLiked = !!data;
     this.renderUI();
   },
@@ -75,35 +147,21 @@ const LikeService = {
     btn.classList.add("animating"); // trigger pop animation
     setTimeout(() => btn.classList.remove("animating"), 400); // 400ms match CSS
 
-    const currentCount = parseInt(
-      document.getElementById("likeCount").innerText,
-    );
-    document.getElementById("likeCount").innerText = hasLiked
-      ? currentCount + 1
-      : currentCount - 1;
+    const currentCount = getCountValue("likeCount");
+    setCountValue("likeCount", hasLiked ? currentCount + 1 : currentCount - 1);
 
     try {
       if (hasLiked) {
-        // Insert Like and incrementally update count via RPC
-        await sb
-          .from("likes")
-          .insert([{ post_id: currentPostId, user_id: currentUser.id }]);
-        await sb.rpc("increment_like_count", { post_id: currentPostId });
+        await PostMutationService.addLike();
       } else {
-        // Delete Like and decrementally update count via RPC
-        await sb
-          .from("likes")
-          .delete()
-          .eq("post_id", currentPostId)
-          .eq("user_id", currentUser.id);
-        await sb.rpc("decrement_like_count", { post_id: currentPostId });
+        await PostMutationService.removeLike();
       }
     } catch (err) {
-      console.warn("RPC failed or Like failed, rolling back.", err);
+      console.warn("Like sync failed, rolling back.", err);
       // Rollback Optimistic UI
       hasLiked = !hasLiked;
       this.renderUI();
-      document.getElementById("likeCount").innerText = currentCount;
+      setCountValue("likeCount", currentCount);
       showToast("Could not sync like. Please try again.", "error");
     } finally {
       this.isToggling = false;
@@ -121,6 +179,7 @@ const LikeService = {
     }
   },
 };
+window.LikeService = LikeService;
 
 /* === INTERACTION: COMMENTS === */
 const CommentService = {
@@ -147,8 +206,12 @@ const CommentService = {
     }
 
     const isReply = parentId !== null;
-    const input = isReply ? document.getElementById(`replyInput-${parentId}`) : document.getElementById("commentInput");
-    const submitBtn = isReply ? document.getElementById(`replySubmitBtn-${parentId}`) : document.getElementById("commentSubmitBtn");
+    const input = isReply
+      ? document.getElementById(`replyInput-${parentId}`)
+      : document.getElementById("commentInput");
+    const submitBtn = isReply
+      ? document.getElementById(`replySubmitBtn-${parentId}`)
+      : document.getElementById("commentSubmitBtn");
 
     if (input) input.disabled = true;
     if (submitBtn) submitBtn.innerText = "Posting...";
@@ -161,49 +224,49 @@ const CommentService = {
       user_name: currentUser.user_metadata.full_name || "User",
       content: content,
       created_at: new Date().toISOString(),
-      parent_id: parentId, // support for threaded nest
+      parent_id: parentId,
     };
 
-    // Inject to DOM immediately
     if (isReply) {
       const repliesContainer = document.getElementById(`replies-${parentId}`);
       if (repliesContainer) {
-        repliesContainer.insertAdjacentHTML("beforeend", renderCommentHTML(optimisticComment, true, true));
+        repliesContainer.insertAdjacentHTML(
+          "beforeend",
+          renderCommentHTML(optimisticComment, true, true),
+        );
       }
-      // Hide reply form
       window.toggleReplyForm(parentId);
     } else {
       document
         .getElementById("commentList")
-        .insertAdjacentHTML("beforeend", renderCommentHTML(optimisticComment, true, false) + `<div class="replies-container" id="replies-${optimisticId}"></div>`);
+        .insertAdjacentHTML(
+          "beforeend",
+          renderCommentHTML(optimisticComment, true, false) +
+            `<div class="replies-container" id="replies-${optimisticId}"></div>`,
+        );
     }
-    
+
     if (input) input.value = "";
+    setCountValue("displayCommentCount", getCountValue("displayCommentCount") + 1);
 
     try {
-      // Send to Supabase
-      const { error } = await sb.from("comments").insert([
-        {
-          post_id: currentPostId,
-          user_id: currentUser.id,
-          user_name: optimisticComment.user_name,
-          content: content,
-          parent_id: parentId
-        },
-      ]);
-
-      if (error) throw error;
-
-      // Update the post's total comment count natively
-      await sb.rpc("increment_comment_count", { post_id: currentPostId });
-
-      // Note: we don't need to manually remove the optimistic one because
-      // the REALTIME subscription will trigger an INSERT event and overwrite this thread cleanly
-      // in a full scale app. But for simplicity here, we let the realtime handler just do its job.
+      await PostMutationService.addComment({
+        post_id: currentPostId,
+        user_id: currentUser.id,
+        user_name: optimisticComment.user_name,
+        content: content,
+        parent_id: parentId,
+      });
     } catch (err) {
-      document.getElementById(optimisticId).innerHTML +=
-        `<p style="color:red;font-size:12px;">Failed to post.</p>`;
+      const optimisticEl = document.getElementById(optimisticId);
+      if (optimisticEl) optimisticEl.remove();
+      if (!isReply) {
+        const orphanReplies = document.getElementById(`replies-${optimisticId}`);
+        if (orphanReplies) orphanReplies.remove();
+      }
+      setCountValue("displayCommentCount", getCountValue("displayCommentCount") - 1);
       console.error(err);
+      showToast("Failed to post comment.", "error");
     } finally {
       if (input) input.disabled = false;
       if (submitBtn) submitBtn.innerText = isReply ? "Reply" : "Post Comment";
@@ -216,12 +279,9 @@ const CommentService = {
       text: "Are you sure you want to remove this comment?",
       onConfirm: async () => {
         try {
-          // Delete visually
+          await PostMutationService.removeComment(commentId);
           animateDeleteDOM("comment-" + commentId);
-
-          // Delete from DB & Dec backend counter
-          await sb.from("comments").delete().eq("id", commentId);
-          await sb.rpc("decrement_comment_count", { post_id: currentPostId });
+          setCountValue("displayCommentCount", getCountValue("displayCommentCount") - 1);
         } catch (err) {
           console.error("Failed to delete comment:", err);
           showToast("Failed to delete comment.", "error");
@@ -230,6 +290,7 @@ const CommentService = {
     });
   },
 };
+window.CommentService = CommentService;
 
 /* === REALTIME: SYNCING THE PAGE FOR EVERYONE === */
 const RealtimeService = {
@@ -270,28 +331,23 @@ const RealtimeService = {
           const list = document.getElementById("commentList");
           const optimistics = list.querySelectorAll(".optimistic");
           optimistics.forEach((el) => el.remove());
+          document.querySelectorAll('.replies-container[id^="replies-opt-"]').forEach((el) => el.remove());
 
           const newComment = payload.new;
-          // In an advanced app, we'd replace the optimistic ID with real DB ID.
-          // For now, if someone else posted, drop it in. Avoid self-duplicates via a robust check,
-          // but optimistic simplicity is fine currently for HFHS.
-          if (newComment.user_id !== currentUser?.id) {
-            if (newComment.parent_id) {
-              const repliesContainer = document.getElementById(`replies-${newComment.parent_id}`);
-              if (repliesContainer) {
-                repliesContainer.insertAdjacentHTML(
-                  "beforeend",
-                  renderCommentHTML(newComment, false, true),
-                );
-              }
-            } else {
-              document
-                .getElementById("commentList")
-                .insertAdjacentHTML(
-                  "beforeend",
-                  renderCommentHTML(newComment, false, false) + `<div class="replies-container" id="replies-${newComment.id}"></div>`,
-                );
+          if (newComment.parent_id) {
+            const repliesContainer = document.getElementById(`replies-${newComment.parent_id}`);
+            if (repliesContainer) {
+              repliesContainer.insertAdjacentHTML(
+                "beforeend",
+                renderCommentHTML(newComment, false, true),
+              );
             }
+          } else {
+            list.insertAdjacentHTML(
+              "beforeend",
+              renderCommentHTML(newComment, false, false) +
+                `<div class="replies-container" id="replies-${newComment.id}"></div>`,
+            );
           }
         },
       )
@@ -343,38 +399,40 @@ const RealtimeService = {
 const buildCommentTree = (comments) => {
   const commentMap = {};
   const rootComments = [];
-  
-  comments.forEach(c => {
-    c.replies = [];
-    commentMap[c.id] = c;
+
+  comments.forEach((comment) => {
+    comment.replies = [];
+    commentMap[comment.id] = comment;
   });
-  
-  comments.forEach(c => {
-    if (c.parent_id && commentMap[c.parent_id]) {
-      commentMap[c.parent_id].replies.push(c);
+
+  comments.forEach((comment) => {
+    if (comment.parent_id && commentMap[comment.parent_id]) {
+      commentMap[comment.parent_id].replies.push(comment);
     } else {
-      rootComments.push(c);
+      rootComments.push(comment);
     }
   });
-  
+
   return rootComments;
 };
 
-const renderCommentTreeHTML = (comments) => {
-  return comments.map(c => `
-    ${renderCommentHTML(c, false, !!c.parent_id)}
-    <div class="replies-container" id="replies-${c.id}">
-      ${c.replies && c.replies.length > 0 ? renderCommentTreeHTML(c.replies) : ''}
-    </div>
-  `).join('');
-};
+const renderCommentTreeHTML = (comments) =>
+  comments
+    .map(
+      (comment) => `
+        ${renderCommentHTML(comment, false, !!comment.parent_id)}
+        <div class="replies-container" id="replies-${comment.id}">
+          ${comment.replies?.length ? renderCommentTreeHTML(comment.replies) : ""}
+        </div>
+      `,
+    )
+    .join("");
 
 /* === UI RENDER HELPERS === */
 const renderCommentHTML = (c, isOptimistic = false, isNested = false) => {
   const dateStr = new Date(c.created_at).toLocaleDateString();
   let classes = isOptimistic ? "comment-card optimistic" : "comment-card";
   if (isNested) classes += " nested";
-  
   const eleId = isOptimistic ? c.id : `comment-${c.id}`;
 
   // Can Delete? Only if we are Admin OR we own the comment
@@ -382,11 +440,8 @@ const renderCommentHTML = (c, isOptimistic = false, isNested = false) => {
   const delBtn = canDelete
     ? `<button class="comment-delete-btn" onclick="CommentService.delete('${c.id}')"><svg width="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>`
     : "";
-    
-  // Reply Button & Form (only allow 1 level deep nesting to keep UI clean, or allow infinite)
-  // We'll allow replying to both root and child, but all child replies attach to the parent for flat trees,
-  // or just nest deeply. Let's do simple infinite nesting.
-  const replyActionHTML = currentUser && !isOptimistic 
+
+  const replyActionHTML = currentUser && !isOptimistic
     ? `
       <button class="reply-btn" onclick="toggleReplyForm('${c.id}')">
         <svg width="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg> Reply
@@ -397,16 +452,17 @@ const renderCommentHTML = (c, isOptimistic = false, isNested = false) => {
           <button id="replySubmitBtn-${c.id}" class="comment-submit" style="position: static; padding: 6px 16px; font-size: 13px;" onclick="CommentService.post(document.getElementById('replyInput-${c.id}').value, '${c.id}')">Reply</button>
         </div>
       </div>
-    ` : '';
+    `
+    : "";
 
   return `
     <div class="${classes}" id="${eleId}">
       <div class="comment-meta">
-        <span class="comment-author">${c.user_name || "Anonymous"}</span>
+        <span class="comment-author">${escapeHtml(c.user_name || "Anonymous")}</span>
         <span class="comment-date">${dateStr}</span>
         ${delBtn}
       </div>
-      <div class="comment-text">${c.content}</div>
+      <div class="comment-text">${linkifyText(c.content || "")}</div>
       ${replyActionHTML}
     </div>
   `;
@@ -414,14 +470,12 @@ const renderCommentHTML = (c, isOptimistic = false, isNested = false) => {
 
 window.toggleReplyForm = (commentId) => {
   const form = document.getElementById(`reply-form-${commentId}`);
-  if (form) {
-    // Only toggle if they are logged in.
-    if (!currentUser) {
-      showToast('Please log in to reply.', 'error');
-      return;
-    }
-    form.classList.toggle('active');
+  if (!form) return;
+  if (!currentUser) {
+    showToast("Please log in to reply.", "error");
+    return;
   }
+  form.classList.toggle("active");
 };
 
 const animateDeleteDOM = (elementId) => {
@@ -433,6 +487,16 @@ const animateDeleteDOM = (elementId) => {
     el.style.margin = "0";
     setTimeout(() => el.remove(), 300);
   }
+};
+
+const renderPostBody = (content) => {
+  const text = (content || "").trim();
+  if (!text) return "<p>No content provided.</p>";
+
+  return text
+    .split(/\n{2,}/)
+    .map((block) => `<p>${linkifyText(block).replace(/\n/g, "<br>")}</p>`)
+    .join("");
 };
 
 /* === SHARE UTILITIES === */
@@ -462,7 +526,7 @@ window.handleAdminDeletePost = async () => {
     text: "This action is irreversible. All likes and comments will also be lost.",
     onConfirm: async () => {
       try {
-        await sb.from("posts").delete().eq("id", currentPostId);
+        await PostMutationService.deleteCurrentPost();
         window.location.href = "feed.html";
       } catch (err) {
         showToast("Could not delete post.", "error");
@@ -471,17 +535,32 @@ window.handleAdminDeletePost = async () => {
   });
 };
 
-/* === IMAGE URL PARSER (backward compatible) === */
-const parseImageUrls = (imageUrlField) => {
-  if (!imageUrlField) return ['https://images.unsplash.com/photo-1495195134817-a165bd39e4e3'];
-  // Try JSON array parse
+/* === MEDIA PARSER (handles old string strings and new media objects) === */
+const parseMediaUrls = (mediaField) => {
+  if (!mediaField) return [{ url: 'https://images.unsplash.com/photo-1495195134817-a165bd39e4e3', type: 'image/jpeg' }];
+
   try {
-    if (imageUrlField.startsWith('[')) {
-      const parsed = JSON.parse(imageUrlField);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    if (typeof mediaField === 'string' && (mediaField.startsWith('[') || mediaField.startsWith('{'))) {
+      const parsed = JSON.parse(mediaField);
+      // Array of media objects
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map(item => {
+          if (typeof item === 'string') return { url: item, type: 'image/jpeg' };
+          return item; // already {url, type}
+        });
+      }
+      // Single media object stored as JSON string
+      if (parsed && parsed.url) return [parsed];
     }
-  } catch (e) { /* not JSON, treat as single URL */ }
-  return [imageUrlField];
+  } catch (e) { /* fallback */ }
+
+  if (typeof mediaField === 'string') {
+    return [{ url: mediaField, type: 'image/jpeg' }];
+  } else if (typeof mediaField === 'object' && mediaField.url) {
+    return [mediaField];
+  }
+
+  return [{ url: 'https://images.unsplash.com/photo-1495195134817-a165bd39e4e3', type: 'image/jpeg' }];
 };
 
 /* === LINKIFY: Convert URLs in text to clickable links === */
@@ -504,26 +583,43 @@ let carouselImages = [];
 let carouselIndex = 0;
 
 /* === CAROUSEL SETUP === */
-const setupCarousel = (urls) => {
-  carouselImages = urls;
+const setupCarousel = (mediaArray) => {
+  carouselImages = mediaArray; // Now holding array of {url, type} objects
   const track = document.getElementById('carouselTrack');
   const dots = document.getElementById('carouselDots');
   const carousel = document.getElementById('heroCarousel');
+  if (!track || !dots || !carousel) return;
 
-  // Build slides
-  track.innerHTML = urls.map((url, i) => `
-    <div class="carousel-slide" onclick="openLightbox(${i})">
-      <img src="${url}" alt="Post photo ${i + 1}" loading="${i === 0 ? 'eager' : 'lazy'}">
-    </div>
-  `).join('');
+  // Build slides (handle videos vs images)
+  track.innerHTML = mediaArray.map((media, i) => {
+    let mediaEl = '';
+    const isVideo = media.type && media.type.startsWith('video/');
+
+    if (isVideo) {
+      mediaEl = `
+        <video src="${media.url}" autoplay loop muted playsinline preload="metadata"></video>
+        <div class="video-indicator">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path></svg>
+        </div>
+      `;
+    } else {
+      mediaEl = `<img src="${media.url}" alt="Post photo ${i + 1}" loading="${i === 0 ? 'eager' : 'lazy'}">`;
+    }
+
+    return `
+      <div class="carousel-slide" onclick="openLightbox(${i})">
+        ${mediaEl}
+      </div>
+    `;
+  }).join('');
 
   // Build dots
-  dots.innerHTML = urls.map((_, i) => `
+  dots.innerHTML = mediaArray.map((_, i) => `
     <button class="carousel-dot ${i === 0 ? 'active' : ''}" onclick="goToSlide(${i})"></button>
   `).join('');
 
   // Multi-image mode
-  if (urls.length > 1) {
+  if (mediaArray.length > 1) {
     carousel.classList.add('multi');
   }
 
@@ -534,8 +630,9 @@ const setupCarousel = (urls) => {
 const goToSlide = (index) => {
   const total = carouselImages.length;
   carouselIndex = Math.max(0, Math.min(index, total - 1));
-  
+
   const track = document.getElementById('carouselTrack');
+  if (!track) return;
   track.style.transform = `translateX(-${carouselIndex * 100}%)`;
 
   // Update dots
@@ -565,10 +662,10 @@ const setupCarouselSwipe = (trackEl) => {
     if (!isDragging) return;
     diffX = e.touches[0].clientX - startX;
     const diffY = e.touches[0].clientY - startY;
-    
+
     // If scrolling more vertically, don't hijack
     if (Math.abs(diffY) > Math.abs(diffX)) { isDragging = false; return; }
-    
+
     const offset = -(carouselIndex * trackEl.parentElement.offsetWidth) + diffX;
     trackEl.style.transform = `translateX(${offset}px)`;
   }, { passive: true });
@@ -577,7 +674,7 @@ const setupCarouselSwipe = (trackEl) => {
     if (!isDragging) { trackEl.style.transition = ''; goToSlide(carouselIndex); return; }
     isDragging = false;
     trackEl.style.transition = '';
-    
+
     const threshold = 50;
     if (diffX < -threshold) { goToSlide(carouselIndex + 1); }
     else if (diffX > threshold) { goToSlide(carouselIndex - 1); }
@@ -593,16 +690,38 @@ let lightboxIndex = 0;
 window.openLightbox = (index) => {
   lightboxIndex = index;
   const overlay = document.getElementById('lightboxOverlay');
-  document.getElementById('lightboxImg').src = carouselImages[index];
-  
+
+  // Need to dynamically swap the element type for the lightbox
+  const media = carouselImages[index];
+  const oldMediaEl = document.getElementById('lightboxMediaEl');
+  if (oldMediaEl) oldMediaEl.remove();
+
+  const isVideo = media.type && media.type.startsWith('video/');
+  let newMediaEl;
+  if (isVideo) {
+    newMediaEl = document.createElement('video');
+    newMediaEl.src = media.url;
+    newMediaEl.controls = true;
+    newMediaEl.autoplay = true;
+    newMediaEl.loop = true;
+    newMediaEl.className = 'lightbox-content';
+  } else {
+    newMediaEl = document.createElement('img');
+    newMediaEl.src = media.url;
+    newMediaEl.alt = 'Full size media';
+    newMediaEl.className = 'lightbox-content';
+  }
+  newMediaEl.id = 'lightboxMediaEl';
+  overlay.insertBefore(newMediaEl, document.getElementById('lightboxPrev'));
+
   if (carouselImages.length > 1) {
     overlay.classList.add('multi');
     document.getElementById('lightboxCounter').innerText = `${index + 1} / ${carouselImages.length}`;
   }
-  
+
   overlay.classList.add('active');
   document.body.style.overflow = 'hidden';
-  
+
   // Setup lightbox swipe
   setupLightboxSwipe();
 };
@@ -617,8 +736,7 @@ window.closeLightbox = (e) => {
 window.lightboxNav = (e, direction) => {
   e.stopPropagation();
   lightboxIndex = Math.max(0, Math.min(lightboxIndex + direction, carouselImages.length - 1));
-  document.getElementById('lightboxImg').src = carouselImages[lightboxIndex];
-  document.getElementById('lightboxCounter').innerText = `${lightboxIndex + 1} / ${carouselImages.length}`;
+  openLightbox(lightboxIndex); // Reusing open to handle media toggle elegantly
 };
 
 const setupLightboxSwipe = () => {
@@ -628,8 +746,8 @@ const setupLightboxSwipe = () => {
   const onTouchStart = (e) => { startX = e.touches[0].clientX; };
   const onTouchMove = (e) => { diffX = e.touches[0].clientX - startX; };
   const onTouchEnd = () => {
-    if (diffX < -50) { lightboxNav({ stopPropagation: () => {} }, 1); }
-    else if (diffX > 50) { lightboxNav({ stopPropagation: () => {} }, -1); }
+    if (diffX < -50) { lightboxNav({ stopPropagation: () => { } }, 1); }
+    else if (diffX > 50) { lightboxNav({ stopPropagation: () => { } }, -1); }
     diffX = 0;
   };
 
@@ -647,10 +765,10 @@ const setupLightboxSwipe = () => {
 document.addEventListener('keydown', (e) => {
   const lightbox = document.getElementById('lightboxOverlay');
   if (!lightbox.classList.contains('active')) return;
-  
+
   if (e.key === 'Escape') closeLightbox();
-  if (e.key === 'ArrowLeft') lightboxNav({ stopPropagation: () => {} }, -1);
-  if (e.key === 'ArrowRight') lightboxNav({ stopPropagation: () => {} }, 1);
+  if (e.key === 'ArrowLeft') lightboxNav({ stopPropagation: () => { } }, -1);
+  if (e.key === 'ArrowRight') lightboxNav({ stopPropagation: () => { } }, 1);
 });
 
 
@@ -663,7 +781,7 @@ const initPostPage = async () => {
   } = await sb.auth.getUser();
   if (user) {
     currentUser = user;
-    if (user.email?.toLowerCase() === CONFIG.adminEmail?.toLowerCase()) isAdmin = true;
+    isAdmin = window.isAdminUser(user);
   }
 
   // 2. Fetch Post UI Injection (with Retry)
@@ -671,19 +789,19 @@ const initPostPage = async () => {
 
   // Inject visual data
   document.title = `${post.title} - HappyFood`;
-  
+
   // Dynamic SEO Updates
   const metaTitle = document.getElementById('metaOgTitle');
   if (metaTitle) metaTitle.content = post.title;
-  
-  // Parse images (backward compatible with single URL or JSON array)
-  const imageUrls = parseImageUrls(post.image_url);
-  
+
+  // Parse images (mixed media objects support)
+  const mediaArray = parseMediaUrls(post.image_url);
+
   const metaImage = document.getElementById('metaOgImage');
-  if (metaImage && imageUrls[0]) metaImage.content = imageUrls[0];
+  if (metaImage && mediaArray[0]) metaImage.content = mediaArray[0].url;
 
   // Setup image carousel
-  setupCarousel(imageUrls);
+  setupCarousel(mediaArray);
 
   document.getElementById("postTitle").innerText =
     post.title || "Untitled Post";
@@ -698,18 +816,18 @@ const initPostPage = async () => {
   document.getElementById("displayCommentCount").innerText =
     post.comments_count || 0;
 
-  // Display content with clickable links
-  const contentBox = document.getElementById("postContentBox");
-  const rawContent = post.content || "No content provided.";
-  contentBox.innerHTML = linkifyText(rawContent);
+  // Clean injected content (raw HTML output placeholder for Rich Text Day 4)
+  document.getElementById("postContentBox").innerHTML = renderPostBody(post.content);
 
   // Show Admin Actions
   if (isAdmin) {
-    document.getElementById("adminControls").classList.add("is-admin");
+    document.getElementById("adminControls").classList.add("admin-visible");
   }
 
   // 3. Init Interactions
-  LikeService.fetchInitialState(currentUser.id);
+  if (currentUser?.id) {
+    LikeService.fetchInitialState(currentUser.id);
+  }
 
   // 4. Init Comments (with Retry)
   const comments = await withRetry(() => CommentService.fetchAll());
@@ -721,4 +839,3 @@ const initPostPage = async () => {
 };
 
 document.addEventListener("DOMContentLoaded", initPostPage);
-

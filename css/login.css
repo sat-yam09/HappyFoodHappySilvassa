@@ -1,159 +1,245 @@
 /* ============================================================
    LOGIN PAGE STYLES — HappyFoodHappySilvassa
-   Styles specific to index.html (login/signup page only).
    ============================================================ */
 
-/* === PAGE LAYOUT === */
 body.login-page {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  overflow: hidden;
+  min-height: 100vh;
   position: relative;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--color-bg);
+  padding: 24px 20px 40px;
 }
 
-/* === ANIMATED BLOB BACKGROUND === */
-.blob {
+.login-shell {
+  width: min(1080px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 430px);
+  gap: 32px;
+  align-items: start;
+  position: relative;
+  z-index: 10;
+  min-height: auto;
+}
+
+.login-intro {
+  padding-right: 12px;
+  max-width: 540px;
+  padding-top: 18px;
+}
+
+.hero-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-radius: var(--radius-pill);
+  background: var(--glass-bg-strong);
+  border: var(--glass-border);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-accent);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 18px;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3.1vw, 40px);
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  color: var(--color-text);
+  max-width: 12ch;
+  margin-bottom: 16px;
+  text-wrap: balance;
+}
+
+.hero-copy {
+  max-width: 500px;
+  color: var(--color-text-secondary);
+  font-size: 15px;
+  line-height: 1.65;
+  margin-bottom: 18px;
+}
+
+.hero-points {
+  display: grid;
+  gap: 10px;
+  max-width: 500px;
+}
+
+.hero-point {
+  padding: 16px 18px;
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  border: var(--glass-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.hero-point strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--color-text);
+  font-size: 16px;
+}
+
+.hero-point span {
+  color: var(--color-text-secondary);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.login-card-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.bg-shape {
   position: absolute;
-  filter: blur(80px);
-  opacity: 0.7;
+  filter: blur(120px);
+  opacity: 0.5;
   z-index: 0;
-  animation: morph infinite linear alternate;
+  border-radius: 50%;
+  animation: float 20s infinite ease-in-out alternate;
 }
 
-.blob-1 {
-  width: 600px;
-  height: 600px;
-  background: var(--color-pink);
-  top: -100px;
-  left: -100px;
-  animation-duration: 16s;
-}
-
-.blob-2 {
+.shape-1 {
   width: 700px;
   height: 700px;
-  background: #ffb6c1;
-  bottom: -150px;
-  right: -100px;
-  animation-duration: 20s;
+  background: var(--color-accent);
+  top: -220px;
+  right: -220px;
+  opacity: 0.12;
+}
+
+.shape-2 {
+  width: 600px;
+  height: 600px;
+  background: #ffd9bb;
+  bottom: -220px;
+  left: -220px;
+  animation-duration: 25s;
   animation-direction: alternate-reverse;
+  opacity: 0.1;
 }
 
-.blob-3 {
-  width: 500px;
-  height: 500px;
-  background: var(--color-blue);
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  animation-duration: 12s;
+.shape-3 {
+  width: 440px;
+  height: 440px;
+  background: rgba(242, 165, 65, 0.14);
+  top: 16%;
+  left: 42%;
+  animation-duration: 18s;
+  opacity: 0.12;
 }
 
-@keyframes morph {
+[data-theme="dark"] .shape-1 {
+  opacity: 0.08;
+}
+
+[data-theme="dark"] .shape-2 {
+  background: #5c3d1a;
+  opacity: 0.15;
+}
+
+[data-theme="dark"] .shape-3 {
+  background: rgba(242, 165, 65, 0.08);
+  opacity: 0.16;
+}
+
+@keyframes float {
   0% {
-    transform: scale(1) translate(0px, 0px);
+    transform: translate(0, 0) scale(1);
   }
-  50% {
-    transform: scale(1.05) translate(20px, -20px);
-  }
+
   100% {
-    transform: scale(1) translate(0px, 0px);
+    transform: translate(-50px, 50px) scale(1.1);
   }
 }
 
-/* === SOCIAL LOGIN === */
-.divider {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  margin: 20px 0;
-  color: var(--color-gray);
-  font-size: 14px;
-}
-.divider::before, .divider::after {
-  content: '';
-  flex: 1;
-  border-bottom: 1px solid rgba(0,0,0,0.1);
-}
-.divider span {
-  padding: 0 10px;
-}
-.google-btn {
-  width: 100%;
-  min-height: 48px;
-  border: 1px solid rgba(0,0,0,0.1);
-  border-radius: var(--radius-pill);
-  background: white;
-  color: var(--color-dark);
-  font-family: var(--font-sans);
-  font-weight: 500;
-  font-size: 15px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-}
-.google-btn:hover {
-  background: #f9fafb;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-.google-icon {
-  width: 20px;
-  height: 20px;
-}
-
-/* === FROSTED GLASS CARD === */
 .card {
-  background: var(--glass-bg);
+  background: var(--glass-bg-strong);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: var(--glass-border);
-  border-radius: var(--radius-card);
-  padding: 40px;
+  border-radius: var(--radius-xl);
+  padding: 42px 32px 30px;
   width: 100%;
   max-width: 420px;
-  box-shadow: var(--shadow-pink);
+  box-shadow: var(--shadow-float);
   position: relative;
-  z-index: 10;
-  margin: 20px;
+  text-align: center;
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  overflow: hidden;
+}
+
+.card-kicker {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .app-name {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-style: italic;
-  color: var(--color-pink);
-  font-size: 28px;
-  text-align: center;
-  margin-bottom: 30px;
+  font-weight: 700;
+  color: var(--color-text);
+  font-size: clamp(28px, 4.1vw, 40px);
+  line-height: 1.08;
+  margin-bottom: 12px;
+  letter-spacing: -0.03em;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
-/* === TAB SWITCHER === */
+.app-name span {
+  color: var(--color-accent);
+}
+
+.card-copy {
+  margin: 0 0 28px;
+  color: var(--color-text-secondary);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
 .tabs {
   display: flex;
-  background: rgba(255, 255, 255, 0.4);
+  background: var(--color-surface);
+  border: var(--glass-border);
   border-radius: var(--radius-pill);
   position: relative;
-  margin-bottom: 30px;
-  padding: 4px;
+  margin-bottom: 32px;
+  padding: 6px;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .tab-btn {
   flex: 1;
   border: none;
   background: transparent;
-  padding: 12px;
+  padding: 14px;
   font-family: var(--font-sans);
   font-weight: 600;
   font-size: 15px;
-  color: var(--color-gray);
+  color: var(--color-text-secondary);
   cursor: pointer;
   position: relative;
   z-index: 2;
-  transition: color 0.3s ease;
+  transition: color var(--transition-base);
 }
 
 .tab-btn.active {
@@ -162,21 +248,22 @@ body.login-page {
 
 .tab-indicator {
   position: absolute;
-  top: 4px;
-  left: 4px;
-  width: calc(50% - 4px);
-  height: calc(100% - 8px);
-  background: linear-gradient(135deg, var(--color-pink), #ff7eb3);
+  top: 6px;
+  left: 6px;
+  width: calc(50% - 6px);
+  height: calc(100% - 12px);
+  background: var(--color-accent);
   border-radius: var(--radius-pill);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 1;
-  box-shadow: 0 4px 15px rgba(237, 69, 147, 0.4);
+  box-shadow: var(--shadow-sm);
 }
 
-/* === FORM SECTIONS === */
 .form-section {
   display: none;
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+  transform: translateY(10px);
 }
 
 .form-section.active {
@@ -184,12 +271,129 @@ body.login-page {
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 28px 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.divider span {
+  padding: 0 16px;
+}
+
+.google-btn {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.google-btn:hover {
+  background: var(--color-surface-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.google-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.login-theme-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+  font-size: 18px;
+  line-height: 1;
+}
+
+@media (max-width: 1180px) {
+  .login-shell {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 400px);
+    gap: 24px;
+  }
+
+  .hero-title {
+    font-size: clamp(26px, 2.8vw, 36px);
+  }
+}
+
+@media (max-width: 980px) {
+  .login-shell {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    min-height: auto;
+  }
+
+  .login-intro {
+    text-align: center;
+    padding-right: 0;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  .hero-title,
+  .hero-copy,
+  .hero-points {
+    max-width: none;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media (max-width: 860px) {
+  .login-shell {
+    width: min(460px, 100%);
+  }
+
+  .login-intro {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  body.login-page {
+    padding: 20px 14px;
+  }
+
+  .card {
+    padding: 38px 20px 26px;
+    max-width: 100%;
+  }
+
+  .app-name {
+    font-size: 30px;
+    max-width: 9ch;
+    margin-left: auto;
+    margin-right: auto;
   }
 }

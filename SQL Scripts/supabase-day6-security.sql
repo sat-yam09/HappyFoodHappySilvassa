@@ -1,112 +1,175 @@
--- ==============================================================
--- DAY 6: Supabase Row Level Security (RLS) Complete Setup
--- Copy and paste this directly into your Supabase SQL Editor!
--- ==============================================================
+-- SECURITY REPAIR SCRIPT
+-- Reapplies the intended RLS and storage policies to an existing project.
 
--- ==========================
--- 1. PROFILES TABLE
--- ==========================
--- Enable RLS
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+alter table public.profiles enable row level security;
+alter table public.posts enable row level security;
+alter table public.comments enable row level security;
+alter table public.likes enable row level security;
 
--- Policy: Users can read any profile (for comment author names).
-CREATE POLICY "Users can read any profile" ON profiles
-FOR SELECT USING (true);
+drop policy if exists "Public profiles are viewable by everyone." on public.profiles;
+drop policy if exists "Users can insert their own profile." on public.profiles;
+drop policy if exists "Users can update own profile." on public.profiles;
+drop policy if exists "Users can read any profile" on public.profiles;
+drop policy if exists "Users can only insert their own profile" on public.profiles;
+drop policy if exists "Users can only update their own profile" on public.profiles;
+drop policy if exists "profiles_select_authenticated" on public.profiles;
+drop policy if exists "profiles_insert_own" on public.profiles;
+drop policy if exists "profiles_update_own" on public.profiles;
 
--- Policy: Users can only insert their own profile (id = auth.uid()).
-CREATE POLICY "Users can only insert their own profile" ON profiles
-FOR INSERT WITH CHECK (id = auth.uid());
+create policy "profiles_select_authenticated"
+  on public.profiles
+  for select
+  to authenticated
+  using (true);
 
--- Policy: Users can only update their own profile.
-CREATE POLICY "Users can only update their own profile" ON profiles
-FOR UPDATE USING (id = auth.uid());
+create policy "profiles_insert_own"
+  on public.profiles
+  for insert
+  to authenticated
+  with check (auth.uid() = id);
 
+create policy "profiles_update_own"
+  on public.profiles
+  for update
+  to authenticated
+  using (auth.uid() = id)
+  with check (auth.uid() = id);
 
--- ==========================
--- 2. POSTS TABLE
--- ==========================
--- Enable RLS
-ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
+drop policy if exists "Anyone can view posts" on public.posts;
+drop policy if exists "Admins can insert posts" on public.posts;
+drop policy if exists "Admins can update posts" on public.posts;
+drop policy if exists "Admins can delete posts" on public.posts;
+drop policy if exists "Everyone can read posts" on public.posts;
+drop policy if exists "Only admin email can INSERT new posts" on public.posts;
+drop policy if exists "Only admin email can UPDATE posts" on public.posts;
+drop policy if exists "Only admin email can DELETE posts" on public.posts;
+drop policy if exists "posts_select_authenticated" on public.posts;
+drop policy if exists "posts_admin_insert" on public.posts;
+drop policy if exists "posts_admin_update" on public.posts;
+drop policy if exists "posts_admin_delete" on public.posts;
 
--- Policy: Everyone (including anonymous) can read posts.
-CREATE POLICY "Everyone can read posts" ON posts
-FOR SELECT USING (true);
+create policy "posts_select_authenticated"
+  on public.posts
+  for select
+  to authenticated
+  using (true);
 
--- Policy: Only admin email can INSERT new posts.
-CREATE POLICY "Only admin email can INSERT new posts" ON posts
-FOR INSERT WITH CHECK (auth.jwt()->>'email' = 'satyamchoudharyfreefree@gmail.com');
+create policy "posts_admin_insert"
+  on public.posts
+  for insert
+  to authenticated
+  with check (auth.jwt() ->> 'email' = 'buildwithdevian@gmail.com');
 
--- Policy: Only admin email can UPDATE posts.
-CREATE POLICY "Only admin email can UPDATE posts" ON posts
-FOR UPDATE USING (auth.jwt()->>'email' = 'satyamchoudharyfreefree@gmail.com');
+create policy "posts_admin_update"
+  on public.posts
+  for update
+  to authenticated
+  using (auth.jwt() ->> 'email' = 'buildwithdevian@gmail.com')
+  with check (auth.jwt() ->> 'email' = 'buildwithdevian@gmail.com');
 
--- Policy: Only admin email can DELETE posts.
-CREATE POLICY "Only admin email can DELETE posts" ON posts
-FOR DELETE USING (auth.jwt()->>'email' = 'satyamchoudharyfreefree@gmail.com');
+create policy "posts_admin_delete"
+  on public.posts
+  for delete
+  to authenticated
+  using (auth.jwt() ->> 'email' = 'buildwithdevian@gmail.com');
 
+drop policy if exists "Anyone can view comments" on public.comments;
+drop policy if exists "Users can insert comments" on public.comments;
+drop policy if exists "Users can delete own comments" on public.comments;
+drop policy if exists "Everyone can read comments" on public.comments;
+drop policy if exists "Authenticated users can insert their own comments" on public.comments;
+drop policy if exists "Users can delete their own comment or Admin can delete any comment" on public.comments;
+drop policy if exists "comments_select_authenticated" on public.comments;
+drop policy if exists "comments_insert_own" on public.comments;
+drop policy if exists "comments_delete_own_or_admin" on public.comments;
 
--- ==========================
--- 3. COMMENTS TABLE
--- ==========================
--- Enable RLS
-ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
+create policy "comments_select_authenticated"
+  on public.comments
+  for select
+  to authenticated
+  using (true);
 
--- Policy: Everyone can read comments.
-CREATE POLICY "Everyone can read comments" ON comments
-FOR SELECT USING (true);
+create policy "comments_insert_own"
+  on public.comments
+  for insert
+  to authenticated
+  with check (auth.uid() = user_id);
 
--- Policy: Authenticated users can insert their own comments (user_id = auth.uid()).
-CREATE POLICY "Authenticated users can insert their own comments" ON comments
-FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND user_id = auth.uid());
+create policy "comments_delete_own_or_admin"
+  on public.comments
+  for delete
+  to authenticated
+  using (
+    auth.uid() = user_id
+    or auth.jwt() ->> 'email' = 'buildwithdevian@gmail.com'
+  );
 
--- Policy: Users can delete only their own comment or Admin can delete any comment.
-CREATE POLICY "Users can delete their own comment or Admin can delete any comment" ON comments
-FOR DELETE USING (
-  user_id = auth.uid() 
-  OR auth.jwt()->>'email' = 'satyamchoudharyfreefree@gmail.com'
-);
+drop policy if exists "Anyone can view likes" on public.likes;
+drop policy if exists "Users can insert their own likes" on public.likes;
+drop policy if exists "Users can delete their own likes" on public.likes;
+drop policy if exists "Users delete their own likes OR Admin can delete any" on public.likes;
+drop policy if exists "Everyone can read likes" on public.likes;
+drop policy if exists "Authenticated users can insert a like" on public.likes;
+drop policy if exists "Users can delete only their own like" on public.likes;
+drop policy if exists "likes_select_authenticated" on public.likes;
+drop policy if exists "likes_insert_own" on public.likes;
+drop policy if exists "likes_delete_own_or_admin" on public.likes;
 
+create policy "likes_select_authenticated"
+  on public.likes
+  for select
+  to authenticated
+  using (true);
 
--- ==========================
--- 4. LIKES TABLE
--- ==========================
--- Enable RLS
-ALTER TABLE likes ENABLE ROW LEVEL SECURITY;
+create policy "likes_insert_own"
+  on public.likes
+  for insert
+  to authenticated
+  with check (auth.uid() = user_id);
 
--- Policy: Everyone can read likes (for counts).
-CREATE POLICY "Everyone can read likes" ON likes
-FOR SELECT USING (true);
+create policy "likes_delete_own_or_admin"
+  on public.likes
+  for delete
+  to authenticated
+  using (
+    auth.uid() = user_id
+    or auth.jwt() ->> 'email' = 'buildwithdevian@gmail.com'
+  );
 
--- Policy: Authenticated users can insert a like (user_id = auth.uid()).
-CREATE POLICY "Authenticated users can insert a like" ON likes
-FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND user_id = auth.uid());
+insert into storage.buckets (id, name, public)
+values ('images', 'images', true)
+on conflict (id) do nothing;
 
--- Policy: Users can delete only their own like (user_id = auth.uid()).
-CREATE POLICY "Users can delete only their own like" ON likes
-FOR DELETE USING (user_id = auth.uid());
+drop policy if exists "Public Access" on storage.objects;
+drop policy if exists "Authenticated users can upload images" on storage.objects;
+drop policy if exists "public read for post-images" on storage.objects;
+drop policy if exists "Auth users upload for post-images" on storage.objects;
+drop policy if exists "Admin delete for post-images" on storage.objects;
+drop policy if exists "images_public_read" on storage.objects;
+drop policy if exists "images_admin_upload" on storage.objects;
+drop policy if exists "images_admin_delete" on storage.objects;
 
--- Note: UNIQUE(post_id, user_id) is usually enforced on the table schema itself, preventing double-liking.
+create policy "images_public_read"
+  on storage.objects
+  for select
+  using (bucket_id = 'images');
 
+create policy "images_admin_upload"
+  on storage.objects
+  for insert
+  to authenticated
+  with check (
+    bucket_id = 'images'
+    and auth.jwt() ->> 'email' = 'buildwithdevian@gmail.com'
+  );
 
--- ==========================
--- 5. STORAGE BUCKET RULES (post-images)
--- ==========================
--- Note: Ensure you have manually created the 'post-images' bucket in Supabase Storage.
+create policy "images_admin_delete"
+  on storage.objects
+  for delete
+  to authenticated
+  using (
+    bucket_id = 'images'
+    and auth.jwt() ->> 'email' = 'buildwithdevian@gmail.com'
+  );
 
--- Policy: Read - public (everyone can view images via URL).
-CREATE POLICY "public read for post-images" ON storage.objects
-FOR SELECT USING (bucket_id = 'post-images');
-
--- Policy: Upload - authenticated users only.
-CREATE POLICY "Auth users upload for post-images" ON storage.objects
-FOR INSERT WITH CHECK (
-  bucket_id = 'post-images' 
-  AND auth.role() = 'authenticated'
-);
-
--- Policy: Delete - admin email only.
-CREATE POLICY "Admin delete for post-images" ON storage.objects
-FOR DELETE USING (
-  bucket_id = 'post-images' 
-  AND auth.jwt()->>'email' = 'satyamchoudharyfreefree@gmail.com'
-);
+notify pgrst, 'reload schema';
