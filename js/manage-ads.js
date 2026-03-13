@@ -318,54 +318,48 @@ function extractStoragePathFromPublicUrl(mediaUrl) {
 async function deleteAd(adId) {
   if (!confirm('Are you sure you want to delete this ad? This cannot be undone.')) return;
 
-  const { data: ad, error: adError } = await sb
-    .from('ads')
-    .select('id, media_url')
-    .eq('id', adId)
-    .maybeSingle();
+  try {
+    const { data: { session }, error: sessionError } = await sb.auth.getSession();
+    if (sessionError) throw sessionError;
 
-  if (adError) {
-    console.error(adError);
-    showToast(adError.message || 'Failed to load ad', 'error');
-    return;
-  }
-
-  if (!ad) {
-    showToast('Ad not found', 'info');
-    loadAds();
-    return;
-  }
-
-  const { error: deleteError, count } = await sb
-    .from('ads')
-    .delete({ count: 'exact' })
-    .eq('id', adId);
-
-  if (deleteError) {
-    console.error(deleteError);
-    showToast(deleteError.message || 'Failed to delete ad', 'error');
-    return;
-  }
-
-  if (count === 0) {
-    showToast('Ad not found', 'info');
-    loadAds();
-    return;
-  }
-
-  const storagePath = extractStoragePathFromPublicUrl(ad.media_url);
-  if (storagePath) {
-    const { error: storageError } = await sb.storage
-      .from(CONFIG.storageBucket)
-      .remove([storagePath]);
-
-    if (storageError) {
-      console.warn('Ad deleted but media cleanup failed.', storageError);
+    if (!session?.access_token) {
+      showToast('Your session expired. Please log in again.', 'error');
+      return;
     }
-  }
 
-  showToast('Ad deleted', 'success');
-  loadAds();
+    const response = await fetch('/api/remove-campaign', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ adId }),
+    });
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      showToast(payload.error || 'Failed to delete ad', 'error');
+      return;
+    }
+
+    const storagePath = extractStoragePathFromPublicUrl(payload.media_url);
+    if (storagePath) {
+      const { error: storageError } = await sb.storage
+        .from(CONFIG.storageBucket)
+        .remove([storagePath]);
+
+      if (storageError) {
+        console.warn('Ad deleted but media cleanup failed.', storageError);
+      }
+    }
+
+    showToast('Ad deleted', 'success');
+    loadAds();
+  } catch (error) {
+    console.error(error);
+    showToast('Delete request was blocked before it reached Supabase. Disable ad blocker for this site or try another browser.', 'error');
+  }
 }
 
 
