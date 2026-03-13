@@ -5,7 +5,8 @@
     { "source": "/post", "destination": "/post.html" },
     { "source": "/profile", "destination": "/profile.html" },
     { "source": "/create-post", "destination": "/create-post.html" },
-    { "source": "/notifications", "destination": "/notifications.html" }
+    { "source": "/notifications", "destination": "/notifications.html" },
+    { "source": "/manage-ads", "destination": "/manage-ads.html" }
   ],
   "headers": [
     {

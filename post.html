@@ -4,18 +4,45 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Post - HappyFoodHappySilvassa</title>
+  <title>Recipe - HappyFood</title>
 
-  <!-- Google Fonts -->
+  <!-- SEO & PWA Meta Tags -->
+  <meta name="description" content="Discover this amazing recipe.">
+  <meta property="og:title" id="metaOgTitle" content="Recipe - HappyFood">
+  <meta property="og:description" content="Discover this amazing recipe.">
+  <meta property="og:image" id="metaOgImage"
+    content="https://images.unsplash.com/photo-1495195134817-a165bd39e4e3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80">
+  <meta name="theme-color" content="#F2A541">
+  <script>
+    if (location.hostname === '127.0.0.1' || location.hostname === 'localhost') {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          registrations.forEach((registration) => registration.unregister());
+        }).catch(() => {});
+      }
+
+      if ('caches' in window) {
+        caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key)))).catch(() => {});
+      }
+    }
+  </script>
+  <link rel="manifest" href="/manifest.json?v=20260313c">
+  <link rel="icon" type="image/png" href="/icons/icon-192.png?v=20260313c">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png?v=20260313c">
+
+  <!-- Theme Script (Must load first) -->
+  <script src="js/theme.js?v=20260313c"></script>
+
+  <!-- Google Fonts: Inter & Playfair Display -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=DM+Sans:wght@400;500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&display=swap"
     rel="stylesheet">
 
   <!-- Core App Styles -->
-  <link rel="stylesheet" href="css/design-system.css">
-  <link rel="stylesheet" href="css/post.css">
+  <link rel="stylesheet" href="css/design-system.css?v=20260313c">
+  <link rel="stylesheet" href="css/post.css?v=20260313c">
 
   <!-- Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -34,8 +61,20 @@
 
   <!-- Hero Image -->
   <header class="hero-section">
-    <img id="heroImage" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Post Hero"
-      class="hero-image">
+    <div class="carousel" id="heroCarousel">
+      <div class="carousel-track" id="carouselTrack"></div>
+      <button class="carousel-arrow carousel-prev" onclick="carouselNav(-1)" aria-label="Previous media">
+        <svg width="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
+        </svg>
+      </button>
+      <button class="carousel-arrow carousel-next" onclick="carouselNav(1)" aria-label="Next media">
+        <svg width="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </button>
+      <div class="carousel-dots" id="carouselDots"></div>
+    </div>
   </header>
 
   <!-- Main Content Body -->
@@ -90,8 +129,8 @@
       <!-- New Comment Form -->
       <form class="comment-form"
         onsubmit="event.preventDefault(); CommentService.post(document.getElementById('commentInput').value)">
-        <textarea id="commentInput" class="comment-input" placeholder="What are your thoughts on this post?" aria-label="Comment on this post"
-          required></textarea>
+        <textarea id="commentInput" class="comment-input" placeholder="What are your thoughts on this post?"
+          aria-label="Comment on this post" required></textarea>
         <button type="submit" id="commentSubmitBtn" class="comment-submit">Post Comment</button>
       </form>
 
@@ -103,13 +142,30 @@
 
   </main>
 
+  <!-- Lightbox Overlay (Full Screen Image Viewer) -->
+  <div class="lightbox-overlay" id="lightboxOverlay" onclick="closeLightbox(event)">
+    <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+    <img class="lightbox-content" id="lightboxMediaEl" src="" alt="Full size image">
+    <button class="lightbox-arrow lightbox-prev" id="lightboxPrev" onclick="lightboxNav(event, -1)">
+      <svg width="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
+      </svg>
+    </button>
+    <button class="lightbox-arrow lightbox-next" id="lightboxNext" onclick="lightboxNav(event, 1)">
+      <svg width="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
+      </svg>
+    </button>
+    <div class="lightbox-counter" id="lightboxCounter"></div>
+  </div>
+
   <!-- Global Toast Component -->
   <div id="toastContainer" class="toast-container"></div>
 
   <!-- Javascript Logic -->
-  <script src="js/config.js"></script>
-  <script src="js/utils.js"></script>
-  <script src="js/post.js"></script>
+  <script src="js/config.js?v=20260313c"></script>
+  <script src="js/utils.js?v=20260313c"></script>
+  <script src="js/post.js?v=20260313c"></script>
 </body>
 
 </html>

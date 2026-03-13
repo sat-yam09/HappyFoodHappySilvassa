@@ -6,6 +6,19 @@
 
 // === TOAST NOTIFICATION SYSTEM ===
 // Usage: showToast('Hello!', 'success')  |  'error'  |  'info'
+window.isAdminUser = (user) => {
+  if (!user?.email || !CONFIG?.adminEmail) return false;
+  return user.email.toLowerCase() === CONFIG.adminEmail.toLowerCase();
+};
+
+window.revealAdminUI = (user) => {
+  const isAdmin = window.isAdminUser(user);
+  if (isAdmin) {
+    document.querySelectorAll('.is-admin').forEach((el) => el.classList.remove('is-admin'));
+  }
+  return isAdmin;
+};
+
 const showToast = (message, type = 'info') => {
   const container = document.getElementById('toastContainer');
   if (!container) return;
@@ -19,7 +32,14 @@ const showToast = (message, type = 'info') => {
   if (type === 'error') icon = '⚠';
   if (type === 'info') icon = 'ℹ';
 
-  toast.innerHTML = `<span style="font-weight: bold;">${icon}</span> <span>${message}</span>`;
+  const iconSpan = document.createElement('span');
+  iconSpan.style.fontWeight = 'bold';
+  iconSpan.textContent = icon;
+
+  const messageSpan = document.createElement('span');
+  messageSpan.textContent = message;
+
+  toast.append(iconSpan, document.createTextNode(' '), messageSpan);
   container.appendChild(toast);
 
   // Trigger slide-in animation
@@ -79,20 +99,37 @@ const togglePassword = (inputId) => {
 const showConfirmModal = ({ title = 'Are you sure?', text, confirmText = 'Delete', type = 'danger', onConfirm }) => {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
-  
-  overlay.innerHTML = `
-    <div class="modal-content">
-      <h3 class="modal-title">${title}</h3>
-      <p class="modal-text">${text}</p>
-      <div class="modal-actions">
-        <button class="modal-btn modal-btn-cancel">Cancel</button>
-        <button class="modal-btn modal-btn-confirm" style="${type === 'danger' ? '' : 'background: var(--color-pink); box-shadow: 0 4px 15px rgba(237, 69, 147, 0.3);'}">
-          ${confirmText}
-        </button>
-      </div>
-    </div>
-  `;
-  
+
+  const modalContent = document.createElement('div');
+  modalContent.className = 'modal-content';
+
+  const modalTitle = document.createElement('h3');
+  modalTitle.className = 'modal-title';
+  modalTitle.textContent = title;
+
+  const modalText = document.createElement('p');
+  modalText.className = 'modal-text';
+  modalText.textContent = text || '';
+
+  const modalActions = document.createElement('div');
+  modalActions.className = 'modal-actions';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'modal-btn modal-btn-cancel';
+  cancelBtn.textContent = 'Cancel';
+
+  const confirmBtn = document.createElement('button');
+  confirmBtn.className = 'modal-btn modal-btn-confirm';
+  confirmBtn.textContent = confirmText;
+  if (type !== 'danger') {
+    confirmBtn.style.background = 'var(--color-pink)';
+    confirmBtn.style.boxShadow = '0 4px 15px rgba(237, 69, 147, 0.3)';
+  }
+
+  modalActions.append(cancelBtn, confirmBtn);
+  modalContent.append(modalTitle, modalText, modalActions);
+  overlay.appendChild(modalContent);
+
   document.body.appendChild(overlay);
   
   // Slide in
@@ -103,8 +140,8 @@ const showConfirmModal = ({ title = 'Are you sure?', text, confirmText = 'Delete
     setTimeout(() => overlay.remove(), 300);
   };
   
-  overlay.querySelector('.modal-btn-cancel').onclick = close;
-  overlay.querySelector('.modal-btn-confirm').onclick = () => {
+  cancelBtn.onclick = close;
+  confirmBtn.onclick = () => {
     if (onConfirm) onConfirm();
     close();
   };
@@ -159,7 +196,7 @@ window.showRealtimeDisconnectDot = () => {
   if (document.getElementById('rt-status-dot')) return;
   const dot = document.createElement('div');
   dot.id = 'rt-status-dot';
-  dot.innerHTML = '🟡';
+  dot.textContent = '🟡';
   dot.title = 'Realtime Disconnected';
   dot.style.cssText = 'position:fixed; top:20px; right:20px; font-size:12px; z-index:9999; filter:drop-shadow(0 0 5px orange);';
   document.body.appendChild(dot);
