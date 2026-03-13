@@ -11,7 +11,6 @@
   const LIGHT_ICON = '\uD83C\uDF19';
   const SW_URL = `/sw.js?v=${APP_VERSION}`;
   const isLocalDev = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
-  let isRefreshing = false;
 
   const stored = localStorage.getItem(STORAGE_KEY);
   const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -67,12 +66,6 @@
     if (isLocalDev) {
       clearDevelopmentCaches().catch(() => {});
     } else {
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (isRefreshing) return;
-        isRefreshing = true;
-        window.location.reload();
-      });
-
       window.addEventListener('load', async () => {
         try {
           const registration = await navigator.serviceWorker.register(SW_URL, { updateViaCache: 'none' });
